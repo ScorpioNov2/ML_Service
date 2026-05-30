@@ -23,7 +23,7 @@ CORS_ALLOW_ORIGINS:     list[str] = [
     "http://127.0.0.1",
     "http://localhost:3000",  # React / Next.js
     "http://localhost:5173",  # Vite / Vue
-    "https://ml-service.onrender.com"
+    "https://ml-service-six.vercel.app"
 ]
 CORS_ALLOW_METHODS:     list[str] = ["*"]
 CORS_ALLOW_HEADERS:     list[str] = ["*"]
