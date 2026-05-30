@@ -29,14 +29,14 @@ class PredictionService:
                 features = model.get('features', self._loan_data_processor.selected_features)
                 self._loan_data_processor.selected_features = features
                 base_model = model["model"]
+                processed_data = self._loan_data_processor.process_raw_data(df)
             else:
                 base_model = model
-
-            processed_data = self._loan_data_processor.process_raw_data(df)
+                processed_data = df
+                
             predictions = base_model.predict(processed_data)
             prob_matrix = base_model.predict_proba(processed_data)
             probability = np.round(np.max(prob_matrix, axis=1), 4)
-            print(probability)
 
         except Exception as exc:
             raise ValueError(
