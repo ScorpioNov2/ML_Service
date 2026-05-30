@@ -1,15 +1,3 @@
-"""
-Prediction router — HTTP boundary only.
-
-Responsibilities
-────────────────
-* Declare endpoints and their parameter types.
-* Decode the raw `form_data` JSON string into a Python list.
-* Delegate all business logic to PredictionController.
-
-Nothing else lives here.
-"""
-
 from __future__ import annotations
 
 import json
@@ -23,68 +11,140 @@ from app.schemas.prediction_schema import AppStatusCode, PredictionResponse
 from app.services.data_service import DataService
 from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
+from app.services.validation_service import DataValidationService
 
-router = APIRouter(prefix="/predict", tags=["Prediction"])
+router = APIRouter(prefix="/predict", tags=["Предсказание"])
 
-# ── Dependency wiring (simple manual DI; replace with FastAPI Depends if
-#    you later add async DB sessions, caches, etc.) ───────────────────────────
+# ── Ручное внедрение зависимостей ─────────────────────────────────────────────
 _controller = PredictionController(
     model_service=ModelService(),
     data_service=DataService(),
     prediction_service=PredictionService(),
+    validation_service=DataValidationService(),
 )
 
 
+def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONResponse]:
+    """
+    Декодировать строку form_data из JSON в список Python.
+    Возвращает (данные, None) при успехе или (None, JSONResponse) при ошибке.
+    """
+    try:
+        parsed = json.loads(raw)
+        if not isinstance(parsed, list):
+            raise TypeError(
+                f"Ожидается JSON-массив, получен: {type(parsed).__name__}"
+            )
+        return parsed, None
+    except (json.JSONDecodeError, TypeError) as exc:
+        err = PredictionResponse.bad_request(
+            f"Некорректный form_data: {exc}"
+        )
+        return None, JSONResponse(
+            status_code=AppStatusCode.BAD_REQUEST,
+            content=err.model_dump(),
+        )
+
+
+#   POST /predict/form    — данные из JSON-формы,  модель по умолчанию (без загрузки)
 @router.post(
-    "",
-    summary="Run ML prediction",
+    "/form",
+    summary="Предсказание по полям формы (модель по умолчанию)",
     description=(
-        "Upload an optional `.pkl` model and either a `.csv` file or a JSON "
-        "list of form-field rows.  Returns a CSV with a `predicted` column "
-        "appended, or a JSON error envelope."
+        "Принимает данные в виде **JSON-массива строк**. "
+        "Всегда использует модель по умолчанию (`./models/model.pkl`). "
+        "Возвращает JSON-массив с добавленным полем `predicted`."
     ),
+    response_model=PredictionResponse,
     responses={
-        200: {"description": "CSV file with predictions", "content": {"text/csv": {}}},
-        400: {"model": PredictionResponse},
-        404: {"model": PredictionResponse},
-        422: {"model": PredictionResponse},
-        500: {"model": PredictionResponse},
+        400: {"model": PredictionResponse, "description": "Некорректный запрос"},
+        404: {"model": PredictionResponse, "description": "Модель по умолчанию не найдена"},
+        422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
+        500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
     },
 )
-async def predict(
-    model_file: Optional[UploadFile] = File(
-        None,
-        description="Model file (.pkl). Leave empty to use the backend default.",
+async def predict_form(
+    form_data: str = Form(
+        ...,
+        description=(
+            "JSON-массив объектов-строк. Пример: "
+            '[{"person_age": 35.0, "person_gender": "male", ...}]'
+        ),
+    ),
+) -> Any:
+    parsed, err = _decode_form_data(form_data)
+    if err:
+        return err
+    return await _controller.handle_form(form_data=parsed)
+
+
+#     /predict/csv     — данные из CSV-файла,   модель по умолчанию (без загрузки)
+@router.post(
+    "/csv",
+    summary="Предсказание по CSV-файлу (модель по умолчанию)",
+    description=(
+        "Принимает данные в виде **CSV-файла**. "
+        "Всегда использует модель по умолчанию (`./models/model.pkl`). "
+        "Возвращает JSON-массив с добавленным полем `predicted`."
+    ),
+    response_model=PredictionResponse,
+    responses={
+        400: {"model": PredictionResponse, "description": "Некорректный запрос"},
+        404: {"model": PredictionResponse, "description": "Модель по умолчанию не найдена"},
+        422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
+        500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
+    },
+)
+async def predict_csv(
+    data_file: UploadFile = File(
+        ...,
+        description="CSV-файл с колонками согласно схеме данных (DATA_SCHEMA).",
+    ),
+) -> Any:
+    return await _controller.handle_csv(data_file=data_file)
+
+
+#   /predict/custom  — данные из формы ИЛИ CSV, обязательная загрузка .pkl-модели
+@router.post(
+    "/custom",
+    summary="Предсказание с пользовательской моделью",
+    description=(
+        "Принимает **обязательный файл модели `.pkl`** и данные. "
+        "Данные можно передать в виде CSV-файла ИЛИ JSON-массива "
+        "(при передаче обоих — CSV имеет приоритет). "
+        "Возвращает JSON-массив с добавленным полем `predicted`."
+    ),
+    response_model=PredictionResponse,
+    responses={
+        400: {"model": PredictionResponse, "description": "Некорректный запрос или формат файла"},
+        422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
+        500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
+    },
+)
+async def predict_custom(
+    model_file: UploadFile = File(
+        ...,
+        description="Обязательный файл модели (.pkl).",
     ),
     data_file: Optional[UploadFile] = File(
         None,
-        description="Data file (.csv). Takes priority over form_data.",
+        description="CSV-файл с данными (имеет приоритет над form_data).",
     ),
     form_data: Optional[str] = Form(
         None,
         description=(
-            'JSON-encoded list of row objects, e.g. '
-            '[{"col1": 1, "col2": 2}, {"col1": 3, "col2": 4}]'
+            "JSON-массив объектов-строк. Пример: "
+            '[{"person_age": 35.0, "person_gender": "male", ...}]'
         ),
     ),
 ) -> Any:
-    parsed_form: Optional[list[dict[str, Any]]] = None
-
+    parsed_form: Optional[list[dict]] = None
     if form_data:
-        try:
-            parsed_form = json.loads(form_data)
-            if not isinstance(parsed_form, list):
-                raise TypeError("form_data must be a JSON array.")
-        except (json.JSONDecodeError, TypeError) as exc:
-            payload = PredictionResponse.bad_request(
-                f"form_data is not valid: {exc}"
-            )
-            return JSONResponse(
-                status_code=AppStatusCode.BAD_REQUEST,
-                content=payload.model_dump(),
-            )
+        parsed_form, err = _decode_form_data(form_data)
+        if err:
+            return err
 
-    return await _controller.handle_prediction(
+    return await _controller.handle_custom(
         model_file=model_file,
         data_file=data_file,
         form_data=parsed_form,
