@@ -1,11 +1,3 @@
-"""
-FastAPI application factory.
-
-Starting point
-──────────────
-    uvicorn app.main:app --reload
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,7 +14,7 @@ from app.routers.prediction_router import router as prediction_router
 
 
 def create_app() -> FastAPI:
-    """Application factory — makes the app testable without side effects."""
+    """Фабрика приложения — упрощает тестирование без побочных эффектов."""
 
     application = FastAPI(
         title=API_TITLE,
@@ -31,7 +23,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # ── CORS ───────────────────────────────────────────────────────────────────
+    # ── CORS ──────────────────────────────────────────────────────────────────
     application.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ALLOW_ORIGINS,
@@ -40,15 +32,17 @@ def create_app() -> FastAPI:
         allow_headers=CORS_ALLOW_HEADERS,
     )
 
-    # ── Routers ────────────────────────────────────────────────────────────────
+    # ── Роутеры ───────────────────────────────────────────────────────────────
     application.include_router(prediction_router, prefix=API_PREFIX)
 
-    # ── Health-check (no business logic, pure infrastructure) ─────────────────
-    @application.get("/health", tags=["Health"])
+    # ── Проверка работоспособности (только инфраструктура, без бизнес-логики) ─
+    @application.get("/health", tags=["Система"])
     async def health() -> dict[str, str]:
+        """Проверить, что сервер запущен и готов к работе."""
         return {"status": "ok", "version": API_VERSION}
 
     return application
 
 
 app = create_app()
+# uvicorn app.main:app --reload

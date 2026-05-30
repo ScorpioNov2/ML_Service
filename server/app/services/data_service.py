@@ -1,16 +1,12 @@
 """
-Data reading layer.
+* DataReader      — абстрактный базовый класс (DIP / ISP)
+* CSVDataReader   — читает байты CSV → DataFrame
+* FormDataReader  — преобразует List[dict] → DataFrame
+* DataService     — фасад, скрывающий выбор читателя от вызывающего кода
 
-Design decisions
-────────────────
-* DataReader     — abstract base (DIP / ISP)
-* CSVDataReader  — reads bytes → DataFrame
-* FormDataReader — reads List[dict] → DataFrame
-* DataService    — façade that hides reader selection from callers
-
-To add a new data source (Excel, Parquet, …):
-  1. Create a new DataReader subclass.
-  2. Add an entry to DataService._reader_registry.
+Добавление нового источника данных (Excel, Parquet и т.д.):
+  1. Создать новый подкласс DataReader.
+  2. Добавить соответствующий метод в DataService.
 """
 
 from __future__ import annotations
@@ -25,71 +21,69 @@ from app.config import MSG_DATA_PARSE_ERROR, SUPPORTED_DATA_EXTENSIONS
 from app.utils.file_validator import FileValidator
 
 
-# ── Abstract reader ────────────────────────────────────────────────────────────
+# ── Абстрактный читатель ──────────────────────────────────────────────────────
 
 class DataReader(ABC):
-    """Parse an arbitrary source into a pandas DataFrame."""
+    """Преобразует произвольный источник данных в pandas DataFrame."""
 
     @abstractmethod
     def read(self, source: Any) -> pd.DataFrame:
-        """Convert *source* into a DataFrame."""
+        """Конвертировать source в DataFrame."""
 
 
-# ── Concrete readers ───────────────────────────────────────────────────────────
+# ── Конкретные читатели ───────────────────────────────────────────────────────
 
 class CSVDataReader(DataReader):
-    """Read raw CSV bytes into a DataFrame."""
+    """Читает сырые байты CSV в DataFrame."""
 
-    def read(self, source: bytes) -> pd.DataFrame:  # noqa: D102
+    def read(self, source: bytes) -> pd.DataFrame:
         try:
             return pd.read_csv(io.BytesIO(source))
         except Exception as exc:
-            raise ValueError(
-                MSG_DATA_PARSE_ERROR.format(detail=str(exc))
-            ) from exc
+            raise ValueError(MSG_DATA_PARSE_ERROR.format(detail=str(exc))) from exc
 
 
 class FormDataReader(DataReader):
-    """Convert a list of dicts (form fields) into a DataFrame."""
+    """Преобразует список словарей (поля формы) в DataFrame."""
 
-    def read(self, source: list[dict[str, Any]]) -> pd.DataFrame:  # noqa: D102
+    def read(self, source: list[dict[str, Any]]) -> pd.DataFrame:
         try:
             return pd.DataFrame(source)
         except Exception as exc:
-            raise ValueError(
-                MSG_DATA_PARSE_ERROR.format(detail=str(exc))
-            ) from exc
+            raise ValueError(MSG_DATA_PARSE_ERROR.format(detail=str(exc))) from exc
 
 
-# ── Service ────────────────────────────────────────────────────────────────────
+# ── Сервис ────────────────────────────────────────────────────────────────────
 
 class DataService:
     """
-    Façade that selects the correct DataReader and exposes a uniform API.
+    Фасад: выбирает правильный DataReader и предоставляет единый API.
     """
 
     def __init__(self) -> None:
-        self._csv_reader = CSVDataReader()
-        self._form_reader = FormDataReader()
+        self._csv_reader   = CSVDataReader()
+        self._form_reader  = FormDataReader()
         self._csv_validator = FileValidator(SUPPORTED_DATA_EXTENSIONS)
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # ── Публичный интерфейс ───────────────────────────────────────────────────
 
     def is_supported_file(self, filename: str) -> bool:
+        """Проверить, поддерживается ли расширение файла данных."""
         return self._csv_validator.is_supported(filename)
 
-    def supported_extensions_display(self) -> str:
-        return self._csv_validator.extensions_display()
+    def show_supported_extensions(self) -> str:
+        """Вернуть строку допустимых расширений для вывода пользователю."""
+        return self._csv_validator.show_supported_extensions()
 
     def read_csv_bytes(self, csv_bytes: bytes) -> pd.DataFrame:
-        """Parse uploaded CSV bytes."""
+        """Разобрать загруженные байты CSV."""
         return self._csv_reader.read(csv_bytes)
 
     def read_form_data(self, rows: list[dict[str, Any]]) -> pd.DataFrame:
-        """Build a DataFrame from JSON form rows."""
+        """Построить DataFrame из JSON-строк формы."""
         return self._form_reader.read(rows)
 
     @staticmethod
-    def dataframe_to_csv_bytes(df: pd.DataFrame) -> bytes:
-        """Serialise a DataFrame to CSV bytes (UTF-8, no BOM)."""
-        return df.to_csv(index=False).encode("utf-8")
+    def dataframe_to_records(df: pd.DataFrame) -> list[dict[str, Any]]:
+        """Сериализовать DataFrame в список словарей для JSON-ответа."""
+        return df.to_dict(orient="records")

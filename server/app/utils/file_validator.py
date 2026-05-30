@@ -1,9 +1,10 @@
 """
-FileValidator — Single Responsibility: validate file extensions.
+FileValidator — единственная ответственность: проверка расширений файлов.
 
-Depends on an injected allow-list so it is closed for modification but open
-for extension (OCP): pass a different list and the same class handles any
-domain.
+Зависит от внедрённого списка допустимых расширений, поэтому:
+  - Закрыт для изменений (OCP): не нужно менять класс при добавлении форматов.
+  - Открыт для расширения: передайте другой список — и тот же класс обработает
+    любой домен (модели, данные, изображения и т.д.).
 """
 
 from pathlib import Path
@@ -11,25 +12,25 @@ from typing import Sequence
 
 
 class FileValidator:
-    """Validates file names against a configurable list of extensions."""
+    """Проверяет имена файлов по настраиваемому списку допустимых расширений."""
 
     def __init__(self, supported_extensions: Sequence[str]) -> None:
-        # Normalise to lower-case so comparisons are case-insensitive.
+        # Приводим к нижнему регистру для регистронезависимого сравнения
         self._supported: frozenset[str] = frozenset(
             ext.lower() for ext in supported_extensions
         )
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # ── Публичный интерфейс ───────────────────────────────────────────────────
 
     def is_supported(self, filename: str) -> bool:
-        """Return True when *filename*'s extension is in the allow-list."""
+        """Вернуть True, если расширение filename входит в список допустимых."""
         return self._get_extension(filename) in self._supported
 
     def extensions_display(self) -> str:
-        """Human-readable string of allowed extensions (e.g. '.pkl, .joblib')."""
+        """Строка допустимых расширений для вывода пользователю (напр. '.pkl, .joblib')."""
         return ", ".join(sorted(self._supported))
 
-    # ── Private helpers ───────────────────────────────────────────────────────
+    # ── Приватные вспомогательные методы ─────────────────────────────────────
 
     @staticmethod
     def _get_extension(filename: str) -> str:
