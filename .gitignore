@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+*.pkl
+models/*.pkl
+!models/model.pkl
+.pytest_cache/
+.coverage
+htmlcov/
