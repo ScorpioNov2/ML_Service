@@ -12,12 +12,17 @@
 from __future__ import annotations
 
 import io
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
 import pandas as pd
 from app.config import MSG_DATA_PARSE_ERROR, SUPPORTED_DATA_EXTENSIONS
 from app.utils.file_validator import FileValidator
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+
 
 # ── Абстрактный читатель ──────────────────────────────────────────────────────
 
@@ -38,8 +43,11 @@ class CSVDataReader(DataReader):
 
     def read(self, source: bytes) -> pd.DataFrame:
         try:
-            return pd.read_csv(io.BytesIO(source))
+            df = pd.read_csv(io.BytesIO(source))
+            logger.info(f"Successfully read CSV: {len(df)} rows, {len(df.columns)} columns")
+            return df
         except Exception as exc:
+            logger.error(f"Failed to read CSV: {exc}")
             raise ValueError(MSG_DATA_PARSE_ERROR.format(detail=str(exc))) from exc
 
 
@@ -48,8 +56,11 @@ class FormDataReader(DataReader):
 
     def read(self, source: list[dict[str, Any]]) -> pd.DataFrame:
         try:
-            return pd.DataFrame(source)
+            df = pd.DataFrame(source)
+            logger.info(f"Successfully converted form data: {len(df)} rows, {len(df.columns)} columns")
+            return df
         except Exception as exc:
+            logger.error(f"Failed to convert form data: {exc}")
             raise ValueError(MSG_DATA_PARSE_ERROR.format(detail=str(exc))) from exc
 
 
@@ -65,12 +76,16 @@ class DataService:
         self._csv_reader = CSVDataReader()
         self._form_reader = FormDataReader()
         self._csv_validator = FileValidator(SUPPORTED_DATA_EXTENSIONS)
+        logger.info("DataService initialized")
 
     # ── Публичный интерфейс ───────────────────────────────────────────────────
 
     def is_supported_file(self, filename: str) -> bool:
         """Проверить, поддерживается ли расширение файла данных."""
-        return self._csv_validator.is_supported(filename)
+        supported = self._csv_validator.is_supported(filename)
+        if not supported:
+            logger.warning(f"Unsupported data file: {filename}")
+        return supported
 
     def show_supported_extensions(self) -> str:
         """Вернуть строку допустимых расширений для вывода пользователю."""
@@ -78,13 +93,17 @@ class DataService:
 
     def read_csv_bytes(self, csv_bytes: bytes) -> pd.DataFrame:
         """Разобрать загруженные байты CSV."""
+        logger.debug("Reading CSV from bytes")
         return self._csv_reader.read(csv_bytes)
 
     def read_form_data(self, rows: list[dict[str, Any]]) -> pd.DataFrame:
         """Построить DataFrame из JSON-строк формы."""
+        logger.debug(f"Converting form data with {len(rows)} rows")
         return self._form_reader.read(rows)
 
     @staticmethod
     def dataframe_to_records(df: pd.DataFrame) -> list[dict[str, Any]]:
         """Сериализовать DataFrame в список словарей для JSON-ответа."""
-        return df.to_dict(orient="records")
+        records = df.to_dict(orient="records")
+        logger.debug(f"Converted DataFrame to {len(records)} records")
+        return records

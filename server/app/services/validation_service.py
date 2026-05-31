@@ -17,6 +17,7 @@ DataValidationService — единственная ответственност�
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Final
 
@@ -32,6 +33,9 @@ from app.schemas.data_schema import DATA_SCHEMA, ColumnDtype
 
 # Максимальное количество примеров плохих значений в сообщении об ошибке
 _MAX_BAD_SAMPLES: Final[int] = 5
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
 
 
 # ── Структуры данных результата ───────────────────────────────────────────────
@@ -73,16 +77,19 @@ class DataValidationService:
     """
 
     def validate(self, df: pd.DataFrame) -> ValidationResult:
+        logger.info(f"Starting validation of DataFrame with {len(df)} rows, {len(df.columns)} columns")
         errors: list[FieldError] = []
 
         # ── Проверка 1: DataFrame не пустой ───────────────────────────────────
         if df.empty:
+            logger.warning("Validation failed: DataFrame is empty")
             errors.append(FieldError(column="*", message=MSG_EMPTY_DATAFRAME))
             return ValidationResult(is_valid=False, errors=errors)
 
         # ── Проверка 2: все обязательные колонки присутствуют ─────────────────
         missing = self._check_missing_columns(df)
         if missing:
+            logger.warning(f"Validation failed: missing columns {missing}")
             errors.append(
                 FieldError(
                     column="*",
@@ -93,12 +100,24 @@ class DataValidationService:
             return ValidationResult(is_valid=False, errors=errors)
 
         # ── Проверка 3: числовые типы данных ──────────────────────────────────
-        errors.extend(self._check_numeric_columns(df))  # ~ +=, != +
+        numeric_errors = self._check_numeric_columns(df)
+        if numeric_errors:
+            logger.debug(f"Numeric validation found {len(numeric_errors)} issues")
+        errors.extend(numeric_errors)
 
         # ── Проверка 4: категориальные значения ───────────────────────────────
-        errors.extend(self._check_categorical_columns(df))
+        categorical_errors = self._check_categorical_columns(df)
+        if categorical_errors:
+            logger.debug(f"Categorical validation found {len(categorical_errors)} issues")
+        errors.extend(categorical_errors)
 
-        return ValidationResult(is_valid=len(errors) == 0, errors=errors)
+        is_valid = len(errors) == 0
+        logger.info(f"Validation completed. Valid: {is_valid}, errors count: {len(errors)}")
+        if not is_valid:
+            for err in errors:
+                logger.debug(f"  - {err.column}: {err.message}")
+
+        return ValidationResult(is_valid=is_valid, errors=errors)
 
     # ── Приватные проверки ────────────────────────────────────────────────────
 
@@ -107,7 +126,10 @@ class DataValidationService:
         """Вернуть список обязательных колонок, отсутствующих в df."""
         required = {spec.name for spec in DATA_SCHEMA}
         present = set(df.columns)
-        return sorted(required - present)
+        missing = sorted(required - present)
+        if missing:
+            logger.debug(f"Missing columns: {missing}")
+        return missing
 
     @staticmethod
     def _check_numeric_columns(df: pd.DataFrame) -> list[FieldError]:
@@ -129,6 +151,7 @@ class DataValidationService:
 
             if bad_mask.any():
                 bad_vals = df.loc[bad_mask, spec.name].astype(str).unique()[:_MAX_BAD_SAMPLES].tolist()
+                logger.debug(f"Numeric column '{spec.name}' has invalid values: {bad_vals}")
                 errors.append(
                     FieldError(
                         column=spec.name,
@@ -158,6 +181,7 @@ class DataValidationService:
             invalid = col_vals[~col_vals.isin(allowed_set)].unique()
 
             if len(invalid) > 0:
+                logger.debug(f"Categorical column '{spec.name}' has invalid values: {invalid}")
                 errors.append(
                     FieldError(
                         column=spec.name,

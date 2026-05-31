@@ -1,3 +1,4 @@
+import logging
 from app.config import (
     API_PREFIX,
     API_TITLE,
@@ -11,6 +12,13 @@ from app.routers.prediction_router import router as prediction_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("mortgage-api")
+
 
 def create_app() -> FastAPI:
     """Фабрика приложения — упрощает тестирование без побочных эффектов."""
@@ -22,6 +30,8 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
+    logger.info("Starting Mortgage Prediction API")
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     application.add_middleware(
         CORSMiddleware,
@@ -30,9 +40,11 @@ def create_app() -> FastAPI:
         allow_methods=CORS_ALLOW_METHODS,
         allow_headers=CORS_ALLOW_HEADERS,
     )
+    logger.debug("CORS middleware configured")
 
     # ── Роутеры ───────────────────────────────────────────────────────────────
     application.include_router(prediction_router, prefix=API_PREFIX)
+    logger.debug(f"Router included with prefix {API_PREFIX}")
 
     # ── Проверка работоспособности (только инфраструктура, без бизнес-логики) ─
     @application.get("/health", tags=["Система"])
@@ -40,6 +52,7 @@ def create_app() -> FastAPI:
         """Проверить, что сервер запущен и готов к работе."""
         return {"status": "ok", "version": API_VERSION}
 
+    logger.info("Application setup complete")
     return application
 
 
