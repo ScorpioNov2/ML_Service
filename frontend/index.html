@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Prediction Service</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Ипотечный консультант</h1>
+        <nav class="tabs">
+            <button class="tab active" data-tab="form">Форма</button>
+            <button class="tab" data-tab="csv">CSV</button>
+            <button class="tab" data-tab="custom">Своя модель</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="tab-form" class="tab-content active">
+            <div class="card">
+                <h2>Данные заявителей</h2>
+                <form id="predict-form">
+                    <div id="applicants-container"></div>
+                    <button type="button" id="add-applicant" class="btn secondary">+ Добавить заявителя</button>
+                    <button type="submit" class="btn primary">Получить прогноз</button>
+                </form>
+                <div id="form-result" class="result-block hidden">
+                    <div id="form-spinner" class="spinner" style="display: none;"></div>
+                    <div id="form-message" class="message"></div>
+                    <div id="form-table-container" class="table-container"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-csv" class="tab-content">
+            <div class="card">
+                <h2>Загрузите CSV-файл</h2>
+                <form id="csv-form">
+                    <div class="form-group file-upload">
+                        <label for="csv-file" class="file-button">Выберите файл</label>
+                        <input type="file" id="csv-file" name="data_file" accept=".csv" required>
+                        <span class="file-placeholder" id="csv-placeholder">Файл не выбран</span>
+                    </div>
+                    <button type="submit" class="btn primary">Загрузить и спрогнозировать</button>
+                </form>
+                <div id="csv-result" class="result-block hidden">
+                    <div id="csv-spinner" class="spinner" style="display: none;"></div>
+                    <div id="csv-message" class="message"></div>
+                    <div id="csv-table-container" class="table-container"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-custom" class="tab-content">
+            <div class="card">
+                <h2>Загрузите свою модель и данные</h2>
+                <form id="custom-form">
+                    <div class="form-group file-upload">
+                        <label for="model-file" class="file-button">Выберите модель (.pkl) *</label>
+                        <input type="file" id="model-file" name="model_file" accept=".pkl" required>
+                        <span class="file-placeholder" id="model-placeholder">Файл не выбран</span>
+                    </div>
+                    <fieldset class="data-type-fieldset">
+                        <legend>Тип данных:</legend>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="data_type" value="csv" checked> CSV
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="data_type" value="form"> Ручной ввод
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <div id="custom-csv-section">
+                        <div class="form-group file-upload">
+                            <label for="custom-csv-file" class="file-button">Выберите CSV</label>
+                            <input type="file" id="custom-csv-file" accept=".csv">
+                            <span class="file-placeholder" id="custom-csv-placeholder">Файл не выбран</span>
+                        </div>
+                    </div>
+
+                    <div id="custom-form-section" style="display:none;">
+                        <div id="custom-applicants-container"></div>
+                        <button type="button" id="custom-add-applicant" class="btn secondary">+ Добавить заявителя</button>
+                    </div>
+
+                    <button type="submit" class="btn primary">Спрогнозировать</button>
+                </form>
+                <div id="custom-result" class="result-block hidden">
+                    <div id="custom-spinner" class="spinner" style="display: none;"></div>
+                    <div id="custom-message" class="message"></div>
+                    <div id="custom-table-container" class="table-container"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>ML Prediction API v1.0.0 | Статус: <span id="api-status">неизвестно</span></p>
+    </footer>
+
+    <template id="applicant-template">
+        <div class="applicant" data-index="0">
+            <h4>Заявитель <span class="applicant-number">1</span></h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Возраст</label>
+                    <input type="number" name="person_age" step="any" required min="18" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Пол</label>
+                    <select name="person_gender" required>
+                        <option value="">--</option>
+                        <option value="female">Женский</option>
+                        <option value="male">Мужской</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Образование</label>
+                    <select name="person_education" required>
+                        <option value="">--</option>
+                        <option value="High School">Средняя школа</option>
+                        <option value="Associate">Среднее специальное</option>
+                        <option value="Bachelor">Бакалавр</option>
+                        <option value="Master">Магистр</option>
+                        <option value="Doctorate">Докторантура</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Годовой доход (USD)</label>
+                    <input type="number" name="person_income" step="100" required min="0" placeholder="Например, 50000">
+                </div>
+                <div class="form-group">
+                    <label>Стаж работы</label>
+                    <input type="number" name="person_emp_exp" step="1" required min="0">
+                </div>
+                <div class="form-group">
+                    <label>Жильё</label>
+                    <select name="person_home_ownership" required>
+                        <option value="">--</option>
+                        <option value="RENT">Аренда</option>
+                        <option value="OWN">Собственность</option>
+                        <option value="MORTGAGE">Ипотека</option>
+                        <option value="OTHER">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Сумма кредита (USD)</label>
+                    <input type="number" name="loan_amnt" step="100" required min="0" placeholder="Например, 200000">
+                </div>
+                <div class="form-group">
+                    <label>Цель кредита</label>
+                    <select name="loan_intent" required>
+                        <option value="">--</option>
+                        <option value="PERSONAL">Личные нужды</option>
+                        <option value="EDUCATION">Образование</option>
+                        <option value="MEDICAL">Медицина</option>
+                        <option value="VENTURE">Бизнес</option>
+                        <option value="HOMEIMPROVEMENT">Ремонт</option>
+                        <option value="DEBTCONSOLIDATION">Рефинансирование</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Процентная ставка (%)</label>
+                    <input type="number" name="loan_int_rate" step="any" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Доля кредита от дохода (0–1)</label>
+                    <input type="number" name="loan_percent_income" step="0.1" required min="0" max="1" title="Отношение суммы кредита к годовому доходу">
+                </div>
+                <div class="form-group">
+                    <label>Срок кредитной истории</label>
+                    <input type="number" name="cb_person_cred_hist_length" step="any" required min="0">
+                </div>
+                <div class="form-group">
+                    <label>Кредитный рейтинг (300–850)</label>
+                    <input type="number" name="credit_score" step="1" required min="300" max="850">
+                </div>
+                <div class="form-group">
+                    <label>Были ли просрочки по кредитам?</label>
+                    <select name="previous_loan_defaults_on_file" required>
+                        <option value="">--</option>
+                        <option value="No">Нет</option>
+                        <option value="Yes">Да</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-remove hidden">Удалить</button>
+        </div>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -21,8 +21,9 @@ PROBABILITY_COLUMN_NAME: str = "confidence (%)"
 CORS_ALLOW_ORIGINS:     list[str] = [
     "http://localhost",
     "http://127.0.0.1",
-    "http://localhost:3000",  # React / Next.js
-    "http://localhost:5173",  # Vite / Vue
+    "http://localhost:3000",  
+    "http://localhost:8080",  # Html
+    "http://localhost:5173",  
     "https://ml-service-six.vercel.app"
 ]
 CORS_ALLOW_METHODS:     list[str] = ["*"]
