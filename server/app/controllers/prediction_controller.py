@@ -3,12 +3,9 @@ from __future__ import annotations
 from typing import Any, Optional
 
 import pandas as pd
-from fastapi import UploadFile
-from fastapi.responses import JSONResponse
-
 from app.config import (
-    MSG_NO_DATA,
     MSG_AMBIGUOUS_DATA_SOURCE,
+    MSG_NO_DATA,
     MSG_PREDICTION_SUCCESS,
     MSG_UNSUPPORTED_DATA_FILE,
     MSG_UNSUPPORTED_MODEL_FILE,
@@ -18,6 +15,8 @@ from app.services.data_service import DataService
 from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
 from app.services.validation_service import DataValidationService
+from fastapi import UploadFile
+from fastapi.responses import JSONResponse
 
 
 class PredictionController:
@@ -28,14 +27,14 @@ class PredictionController:
 
     def __init__(
         self,
-        model_service:      ModelService,
-        data_service:       DataService,
+        model_service: ModelService,
+        data_service: DataService,
         prediction_service: PredictionService,
         validation_service: DataValidationService,
     ) -> None:
-        self._model_svc      = model_service
-        self._data_svc       = data_service
-        self._pred_svc       = prediction_service
+        self._model_svc = model_service
+        self._data_svc = data_service
+        self._pred_svc = prediction_service
         self._validation_svc = validation_service
 
     async def handle_form(
@@ -82,8 +81,8 @@ class PredictionController:
     async def handle_custom(
         self,
         model_file: UploadFile,
-        data_file:  Optional[UploadFile] = None,
-        form_data:  Optional[list[dict[str, Any]]] = None,
+        data_file: Optional[UploadFile] = None,
+        form_data: Optional[list[dict[str, Any]]] = None,
     ) -> JSONResponse:
         """
         /predict/custom
@@ -94,15 +93,11 @@ class PredictionController:
         if not self._model_svc.is_supported(model_file.filename or ""):
             return self._error(
                 AppStatusCode.BAD_REQUEST,
-                MSG_UNSUPPORTED_MODEL_FILE.format(
-                    extensions=self._model_svc.show_supported_extensions()
-                ),
+                MSG_UNSUPPORTED_MODEL_FILE.format(extensions=self._model_svc.show_supported_extensions()),
             )
         try:
-            raw   = await model_file.read()
-            model = self._model_svc.load_from_bytes(
-                model_file.filename or "model.pkl", raw
-            )
+            raw = await model_file.read()
+            model = self._model_svc.load_from_bytes(model_file.filename or "model.pkl", raw)
         except ValueError as exc:
             return self._error(AppStatusCode.SERVER_ERROR, str(exc))
 
@@ -171,9 +166,7 @@ class PredictionController:
         if not self._data_svc.is_supported_file(data_file.filename or ""):
             return self._error(
                 AppStatusCode.BAD_REQUEST,
-                MSG_UNSUPPORTED_DATA_FILE.format(
-                    extensions=self._data_svc.show_supported_extensions()
-                ),
+                MSG_UNSUPPORTED_DATA_FILE.format(extensions=self._data_svc.show_supported_extensions()),
             )
         try:
             raw = await data_file.read()
@@ -184,9 +177,7 @@ class PredictionController:
     @staticmethod
     def _error(status_code: int, message: str) -> JSONResponse:
         """Сформировать JSONResponse с описанием ошибки."""
-        payload = PredictionResponse(
-            status_code=status_code, message=message, data=None
-        )
+        payload = PredictionResponse(status_code=status_code, message=message, data=None)
         return JSONResponse(
             status_code=status_code,
             content=payload.model_dump(),

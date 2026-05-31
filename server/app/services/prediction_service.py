@@ -7,50 +7,49 @@ PredictionService — единственная ответственность: �
 
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any, Dict
 
-import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-
+import pandas as pd
 from app.config import MSG_PREDICTION_ERROR, PREDICTED_COLUMN_NAME, PROBABILITY_COLUMN_NAME
+from sklearn.preprocessing import StandardScaler
 
 
 class PredictionService:
     """Запускает инференс и возвращает обогащённый DataFrame."""
+
     def __init__(self):
         self._loan_data_processor = LoanDataProcessor()
 
     def predict(self, model: Dict | Any, df: pd.DataFrame) -> pd.DataFrame:
         try:
             if isinstance(model, dict):
-                if 'scaler' in model:
-                    self._loan_data_processor.scaler = model['scaler']
-                features = model.get('features', self._loan_data_processor.selected_features)
+                if "scaler" in model:
+                    self._loan_data_processor.scaler = model["scaler"]
+                features = model.get("features", self._loan_data_processor.selected_features)
                 self._loan_data_processor.selected_features = features
                 base_model = model["model"]
                 processed_data = self._loan_data_processor.process_raw_data(df)
             else:
                 base_model = model
                 processed_data = df
-                
+
             predictions = base_model.predict(processed_data)
             prob_matrix = base_model.predict_proba(processed_data)
             probability = np.round(np.max(prob_matrix, axis=1), 4)
 
         except Exception as exc:
-            raise ValueError(
-                MSG_PREDICTION_ERROR.format(detail=str(exc))
-            ) from exc
+            raise ValueError(MSG_PREDICTION_ERROR.format(detail=str(exc))) from exc
 
         result = df.copy()
         result[PREDICTED_COLUMN_NAME] = predictions
-        result[PROBABILITY_COLUMN_NAME] = (pd.Series(probability) * 100).apply('{:.2f}'.format).values
+        result[PROBABILITY_COLUMN_NAME] = (pd.Series(probability) * 100).apply("{:.2f}".format).values
 
         return result
-    
+
     def _preprocess_raw_data(self, df: pd.DataFrame) -> pd.DataFrame:
         return self._loan_data_processor.process_raw_data(df)
+
 
 class LoanDataProcessor:
     def __init__(self):
@@ -64,23 +63,12 @@ class LoanDataProcessor:
             "loan_percent_income",
             "cb_person_cred_hist_length",
             "credit_score",
-            "previous_loan_defaults_on_file"
+            "previous_loan_defaults_on_file",
         ]
 
-        self.education_order = {
-            "High School": 0,
-            "Associate": 1,
-            "Bachelor": 2,
-            "Master": 3,
-            "Doctorate": 4
-        }
+        self.education_order = {"High School": 0, "Associate": 1, "Bachelor": 2, "Master": 3, "Doctorate": 4}
 
-        self.home_ownership_map = {
-            "RENT": 1,
-            "MORTGAGE": 2,
-            "OWN": 3,
-            "OTHER": 4
-        }
+        self.home_ownership_map = {"RENT": 1, "MORTGAGE": 2, "OWN": 3, "OTHER": 4}
 
         self.loan_intent_map = {
             "PERSONAL": 1,
@@ -88,18 +76,12 @@ class LoanDataProcessor:
             "MEDICAL": 3,
             "VENTURE": 4,
             "HOMEIMPROVEMENT": 5,
-            "DEBTCONSOLIDATION": 6
+            "DEBTCONSOLIDATION": 6,
         }
 
-        self.gender_map = {
-            "male": 1,
-            "female": 0
-        }
+        self.gender_map = {"male": 1, "female": 0}
 
-        self.previous_defaults_map = {
-            "Yes": 1,
-            "No": 0
-        }
+        self.previous_defaults_map = {"Yes": 1, "No": 0}
 
         self.scaler = StandardScaler()
         self.is_fitted = False
@@ -124,25 +106,18 @@ class LoanDataProcessor:
             df["person_education"] = df["person_education"].map(self.education_order)
 
         if "person_home_ownership" in df.columns:
-            df["person_home_ownership"] = df["person_home_ownership"].map(
-                self.home_ownership_map
-            )
+            df["person_home_ownership"] = df["person_home_ownership"].map(self.home_ownership_map)
 
         if "loan_intent" in df.columns:
             df["loan_intent"] = df["loan_intent"].map(self.loan_intent_map)
 
         if "previous_loan_defaults_on_file" in df.columns:
-            df["previous_loan_defaults_on_file"] = df[
-                "previous_loan_defaults_on_file"
-            ].map(self.previous_defaults_map)
+            df["previous_loan_defaults_on_file"] = df["previous_loan_defaults_on_file"].map(self.previous_defaults_map)
 
         return df
 
     def select_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        missing_columns = [
-            column for column in self.selected_features
-            if column not in df.columns
-        ]
+        missing_columns = [column for column in self.selected_features if column not in df.columns]
 
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
@@ -161,9 +136,7 @@ class LoanDataProcessor:
         elif isinstance(data, pd.DataFrame):
             df = data.copy()
         else:
-            raise ValueError(
-                "Input data must be dict, list of dicts, or pandas DataFrame"
-            )
+            raise ValueError("Input data must be dict, list of dicts, or pandas DataFrame")
 
         if "loan_status" in df.columns:
             df = df.drop(columns=["loan_status"])

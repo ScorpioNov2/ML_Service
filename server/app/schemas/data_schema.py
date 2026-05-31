@@ -13,20 +13,21 @@ ColumnDtype соответствует pandas dtype:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-
 # ── Dtype enum ─────────────────────────────────────────────────────────────────
 
+
 class ColumnDtype(str, Enum):
-    FLOAT  = "float64"
-    INT    = "int64"
+    FLOAT = "float64"
+    INT = "int64"
     OBJECT = "object"
 
 
 # ── Column specification ────────────────────────────────────────────────────────
+
 
 @dataclass(frozen=True)
 class ColumnSpec:
@@ -36,7 +37,7 @@ class ColumnSpec:
     dtype: ColumnDtype
     # None → принимать любые строки; list → жёсткое перечисление допустимых значений
     allowed_values: Optional[tuple[str, ...]] = None
-    nullable: bool = False           # True → разрешить NaN в этой колонке
+    nullable: bool = False  # True → разрешить NaN в этой колонке
 
 
 # ── Schema definition ───────────────────────────────────────────────────────────
@@ -46,17 +47,23 @@ DATA_SCHEMA: tuple[ColumnSpec, ...] = (
     # ── Личная информация ───────────────────────────────────────
     ColumnSpec("person_age", ColumnDtype.FLOAT),
     ColumnSpec("person_gender", ColumnDtype.OBJECT, allowed_values=("female", "male")),
-    ColumnSpec("person_education", ColumnDtype.OBJECT, allowed_values=("High School", "Associate", "Bachelor", "Master", "Doctorate")),
+    ColumnSpec(
+        "person_education",
+        ColumnDtype.OBJECT,
+        allowed_values=("High School", "Associate", "Bachelor", "Master", "Doctorate"),
+    ),
     ColumnSpec("person_income", ColumnDtype.FLOAT),
     ColumnSpec("person_emp_exp", ColumnDtype.INT),
     ColumnSpec("person_home_ownership", ColumnDtype.OBJECT, allowed_values=("RENT", "OWN", "MORTGAGE", "OTHER")),
-
     # ── Информация о кредите ────────────────────────────────────
     ColumnSpec("loan_amnt", ColumnDtype.FLOAT),
-    ColumnSpec("loan_intent", ColumnDtype.OBJECT, allowed_values=("PERSONAL", "EDUCATION", "MEDICAL", "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION")),
+    ColumnSpec(
+        "loan_intent",
+        ColumnDtype.OBJECT,
+        allowed_values=("PERSONAL", "EDUCATION", "MEDICAL", "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION"),
+    ),
     ColumnSpec("loan_int_rate", ColumnDtype.FLOAT),
     ColumnSpec("loan_percent_income", ColumnDtype.FLOAT),
-
     # ── Кредитная история ───────────────────────────────────────
     ColumnSpec("cb_person_cred_hist_length", ColumnDtype.FLOAT),
     ColumnSpec("credit_score", ColumnDtype.INT),

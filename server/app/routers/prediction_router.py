@@ -3,15 +3,14 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 
-from fastapi import APIRouter, File, Form, UploadFile
-from fastapi.responses import JSONResponse
-
 from app.controllers.prediction_controller import PredictionController
 from app.schemas.prediction_schema import AppStatusCode, PredictionResponse
 from app.services.data_service import DataService
 from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
 from app.services.validation_service import DataValidationService
+from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/predict", tags=["Предсказание"])
 
@@ -32,14 +31,10 @@ def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONRes
     try:
         parsed = json.loads(raw)
         if not isinstance(parsed, list):
-            raise TypeError(
-                f"Ожидается JSON-массив, получен: {type(parsed).__name__}"
-            )
+            raise TypeError(f"Ожидается JSON-массив, получен: {type(parsed).__name__}")
         return parsed, None
     except (json.JSONDecodeError, TypeError) as exc:
-        err = PredictionResponse.bad_request(
-            f"Некорректный form_data: {exc}"
-        )
+        err = PredictionResponse.bad_request(f"Некорректный form_data: {exc}")
         return None, JSONResponse(
             status_code=AppStatusCode.BAD_REQUEST,
             content=err.model_dump(),
@@ -66,10 +61,7 @@ def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONRes
 async def predict_form(
     form_data: str = Form(
         ...,
-        description=(
-            "JSON-массив объектов-строк. Пример: "
-            '[{"person_age": 35.0, "person_gender": "male", ...}]'
-        ),
+        description=("JSON-массив объектов-строк. Пример: " '[{"person_age": 35.0, "person_gender": "male", ...}]'),
     ),
 ) -> Any:
     parsed, err = _decode_form_data(form_data)
@@ -132,10 +124,7 @@ async def predict_custom(
     ),
     form_data: Optional[str] = Form(
         None,
-        description=(
-            "JSON-массив объектов-строк. Пример: "
-            '[{"person_age": 35.0, "person_gender": "male", ...}]'
-        ),
+        description=("JSON-массив объектов-строк. Пример: " '[{"person_age": 35.0, "person_gender": "male", ...}]'),
     ),
 ) -> Any:
     parsed_form: Optional[list[dict]] = None

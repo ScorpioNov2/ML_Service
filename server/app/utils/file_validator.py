@@ -16,9 +16,7 @@ class FileValidator:
 
     def __init__(self, supported_extensions: Sequence[str]) -> None:
         # Приводим к нижнему регистру для регистронезависимого сравнения
-        self._supported: frozenset[str] = frozenset(
-            ext.lower() for ext in supported_extensions
-        )
+        self._supported: frozenset[str] = frozenset(ext.lower() for ext in supported_extensions)
 
     # ── Публичный интерфейс ───────────────────────────────────────────────────
 

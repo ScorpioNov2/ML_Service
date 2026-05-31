@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import pandas as pd
-
 from app.config import (
     MSG_EMPTY_DATAFRAME,
     MSG_INVALID_CATEGORY,
@@ -37,28 +36,30 @@ _MAX_BAD_SAMPLES: Final[int] = 5
 
 # ── Структуры данных результата ───────────────────────────────────────────────
 
+
 @dataclass
 class FieldError:
     """Одна ошибка валидации для одной колонки."""
-    column:  str
+
+    column: str
     message: str
 
 
 @dataclass
 class ValidationResult:
     """Агрегированный результат, возвращаемый DataValidationService.validate()."""
+
     is_valid: bool
-    errors:   list[FieldError] = field(default_factory=list)
+    errors: list[FieldError] = field(default_factory=list)
 
     def summary(self) -> str:
         """Читаемый список всех ошибок в виде строки."""
-        lines = "\n".join(
-            f"  • {e.column}: {e.message}" for e in self.errors
-        )
+        lines = "\n".join(f"  • {e.column}: {e.message}" for e in self.errors)
         return MSG_VALIDATION_FAILED.format(details=lines)
 
 
 # ── Сервис ────────────────────────────────────────────────────────────────────
+
 
 class DataValidationService:
     """
@@ -82,17 +83,17 @@ class DataValidationService:
         # ── Проверка 2: все обязательные колонки присутствуют ─────────────────
         missing = self._check_missing_columns(df)
         if missing:
-            errors.append(FieldError(
-                column="*",
-                message=MSG_MISSING_COLUMNS.format(
-                    columns=", ".join(f"'{c}'" for c in missing)
-                ),
-            ))
+            errors.append(
+                FieldError(
+                    column="*",
+                    message=MSG_MISSING_COLUMNS.format(columns=", ".join(f"'{c}'" for c in missing)),
+                )
+            )
             # Ранний выход — нельзя проверить типы/значения без колонок
             return ValidationResult(is_valid=False, errors=errors)
 
         # ── Проверка 3: числовые типы данных ──────────────────────────────────
-        errors.extend(self._check_numeric_columns(df)) # ~ +=, != +
+        errors.extend(self._check_numeric_columns(df))  # ~ +=, != +
 
         # ── Проверка 4: категориальные значения ───────────────────────────────
         errors.extend(self._check_categorical_columns(df))
@@ -105,7 +106,7 @@ class DataValidationService:
     def _check_missing_columns(df: pd.DataFrame) -> list[str]:
         """Вернуть список обязательных колонок, отсутствующих в df."""
         required = {spec.name for spec in DATA_SCHEMA}
-        present  = set(df.columns)
+        present = set(df.columns)
         return sorted(required - present)
 
     @staticmethod
@@ -121,26 +122,23 @@ class DataValidationService:
             if spec.name not in df.columns:
                 continue  # уже поймано проверкой на отсутствующие колонки
 
-            coerced  = pd.to_numeric(df[spec.name], errors="coerce")
+            coerced = pd.to_numeric(df[spec.name], errors="coerce")
             bad_mask = coerced.isna()
             if not spec.nullable:
                 bad_mask = bad_mask | df[spec.name].isna()
 
             if bad_mask.any():
-                bad_vals = (
-                    df.loc[bad_mask, spec.name]
-                    .astype(str)
-                    .unique()[:_MAX_BAD_SAMPLES]
-                    .tolist()
-                )
-                errors.append(FieldError(
-                    column=spec.name,
-                    message=MSG_INVALID_DTYPE.format(
+                bad_vals = df.loc[bad_mask, spec.name].astype(str).unique()[:_MAX_BAD_SAMPLES].tolist()
+                errors.append(
+                    FieldError(
                         column=spec.name,
-                        expected=spec.dtype.value,
-                        values=", ".join(f"'{v}'" for v in bad_vals),
-                    ),
-                ))
+                        message=MSG_INVALID_DTYPE.format(
+                            column=spec.name,
+                            expected=spec.dtype.value,
+                            values=", ".join(f"'{v}'" for v in bad_vals),
+                        ),
+                    )
+                )
         return errors
 
     @staticmethod
@@ -156,16 +154,18 @@ class DataValidationService:
                 continue
 
             allowed_set = set(spec.allowed_values)
-            col_vals    = df[spec.name].dropna().astype(str)
-            invalid     = col_vals[~col_vals.isin(allowed_set)].unique()
+            col_vals = df[spec.name].dropna().astype(str)
+            invalid = col_vals[~col_vals.isin(allowed_set)].unique()
 
             if len(invalid) > 0:
-                errors.append(FieldError(
-                    column=spec.name,
-                    message=MSG_INVALID_CATEGORY.format(
+                errors.append(
+                    FieldError(
                         column=spec.name,
-                        invalid=", ".join(f"'{v}'" for v in invalid[:_MAX_BAD_SAMPLES]),
-                        allowed=", ".join(f"'{v}'" for v in sorted(allowed_set)),
-                    ),
-                ))
+                        message=MSG_INVALID_CATEGORY.format(
+                            column=spec.name,
+                            invalid=", ".join(f"'{v}'" for v in invalid[:_MAX_BAD_SAMPLES]),
+                            allowed=", ".join(f"'{v}'" for v in sorted(allowed_set)),
+                        ),
+                    )
+                )
         return errors

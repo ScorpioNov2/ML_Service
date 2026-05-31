@@ -16,12 +16,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import pandas as pd
-
 from app.config import MSG_DATA_PARSE_ERROR, SUPPORTED_DATA_EXTENSIONS
 from app.utils.file_validator import FileValidator
 
-
 # ── Абстрактный читатель ──────────────────────────────────────────────────────
+
 
 class DataReader(ABC):
     """Преобразует произвольный источник данных в pandas DataFrame."""
@@ -32,6 +31,7 @@ class DataReader(ABC):
 
 
 # ── Конкретные читатели ───────────────────────────────────────────────────────
+
 
 class CSVDataReader(DataReader):
     """Читает сырые байты CSV в DataFrame."""
@@ -55,14 +55,15 @@ class FormDataReader(DataReader):
 
 # ── Сервис ────────────────────────────────────────────────────────────────────
 
+
 class DataService:
     """
     Фасад: выбирает правильный DataReader и предоставляет единый API.
     """
 
     def __init__(self) -> None:
-        self._csv_reader   = CSVDataReader()
-        self._form_reader  = FormDataReader()
+        self._csv_reader = CSVDataReader()
+        self._form_reader = FormDataReader()
         self._csv_validator = FileValidator(SUPPORTED_DATA_EXTENSIONS)
 
     # ── Публичный интерфейс ───────────────────────────────────────────────────

@@ -22,8 +22,8 @@ from app.config import (
 )
 from app.utils.file_validator import FileValidator
 
-
 # ── Абстрактный загрузчик ─────────────────────────────────────────────────────
+
 
 class ModelLoader(ABC):
     """Загружает модель машинного обучения из бинарного потока."""
@@ -35,6 +35,7 @@ class ModelLoader(ABC):
 
 # ── Конкретные загрузчики ─────────────────────────────────────────────────────
 
+
 class PickleModelLoader(ModelLoader):
     """Десериализует модель из pickle-формата (.pkl)."""
 
@@ -44,6 +45,7 @@ class PickleModelLoader(ModelLoader):
 
 
 # ── Сервис ────────────────────────────────────────────────────────────────────
+
 
 class ModelService:
     """
@@ -77,25 +79,19 @@ class ModelService:
         try:
             return loader.load(io.BytesIO(model_bytes))
         except Exception as exc:
-            raise ValueError(
-                MSG_MODEL_LOAD_ERROR.format(detail=str(exc))
-            ) from exc
+            raise ValueError(MSG_MODEL_LOAD_ERROR.format(detail=str(exc))) from exc
 
     def load_default(self) -> Any:
         """Загрузить модель по умолчанию из директории ./models."""
         default_path: Path = DEFAULT_MODEL_DIR / DEFAULT_MODEL_FILENAME
         if not default_path.exists():
-            raise FileNotFoundError(
-                MSG_DEFAULT_MODEL_NOT_FOUND.format(path=default_path)
-            )
+            raise FileNotFoundError(MSG_DEFAULT_MODEL_NOT_FOUND.format(path=default_path))
         loader = self._resolve_loader(DEFAULT_MODEL_FILENAME)
         try:
             with default_path.open("rb") as fh:
                 return loader.load(fh)
         except Exception as exc:
-            raise ValueError(
-                MSG_MODEL_LOAD_ERROR.format(detail=str(exc))
-            ) from exc
+            raise ValueError(MSG_MODEL_LOAD_ERROR.format(detail=str(exc))) from exc
 
     # ── Приватные вспомогательные методы ─────────────────────────────────────
 

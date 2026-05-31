@@ -15,19 +15,20 @@ class AppStatusCode(IntEnum):
     Коды статуса на уровне приложения.
     Отделены от HTTP-кодов, чтобы HTTP-слой и бизнес-слой могли развиваться независимо.
     """
-    SUCCESS       = 200
-    BAD_REQUEST   = 400
-    NOT_FOUND     = 404
+
+    SUCCESS = 200
+    BAD_REQUEST = 400
+    NOT_FOUND = 404
     UNPROCESSABLE = 422
-    SERVER_ERROR  = 500
+    SERVER_ERROR = 500
 
 
 class PredictionResponse(BaseModel):
     """Единый конверт ответа для всех эндпоинтов предсказания."""
 
     status_code: int
-    message:     str
-    data:        Optional[Any] = None
+    message: str
+    data: Optional[Any] = None
 
     @classmethod
     def ok(cls, message: str, data: Any = None) -> "PredictionResponse":
