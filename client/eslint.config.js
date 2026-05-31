@@ -3,10 +3,10 @@ import js from "@eslint/js";
 export default [
   js.configs.recommended,
   {
-    files: ["client/**/*.js"],
+    files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
-      sourceType: "script",
+      sourceType: "module",          // ← изменено
       globals: {
         document: "readonly",
         window: "readonly",
