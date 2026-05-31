@@ -47,26 +47,23 @@ jobs:
   frontend-lint:
     runs-on: ubuntu-latest
     steps:
-    - name: Загрузка кода репозитория
-      uses: actions/checkout@v4
+      - name: Загрузка кода репозитория
+        uses: actions/checkout@v4
 
-    - name: Установка Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Установка глобальных линтеров для HTML/CSS/JS
-      run: |
-        npm install -g html-validate stylelint eslint
+      - name: Установка локальных зависимостей
+        run: npm ci
 
-    - name: Проверка валидности HTML
-      run: html-validate "client/*.html"
+      - name: Проверка валидности HTML
+        run: npx html-validate "client/*.html"
 
-    - name: Установка stylelint конфига
-      run: npm install -g stylelint-config-standard
+      - name: Проверка стилей CSS
+        run: npx stylelint "client/*.css"
 
-    - name: Проверка стилей CSS
-      run: stylelint "client/*.css"
-
-    - name: Проверка JavaScript
-      run: eslint "client/*.js"
+      - name: Проверка JavaScript
+        run: npx eslint "client/*.js"
