@@ -1,4 +1,8 @@
 import logging
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.config import (
     API_PREFIX,
     API_TITLE,
@@ -9,8 +13,6 @@ from app.config import (
     CORS_ALLOW_ORIGINS,
 )
 from app.routers.prediction_router import router as prediction_router
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 # Настройка логирования
 logging.basicConfig(

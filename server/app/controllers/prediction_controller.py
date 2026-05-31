@@ -4,6 +4,9 @@ import logging
 from typing import Any, Optional
 
 import pandas as pd
+from fastapi import UploadFile
+from fastapi.responses import JSONResponse
+
 from app.config import (
     MSG_AMBIGUOUS_DATA_SOURCE,
     MSG_NO_DATA,
@@ -16,8 +19,6 @@ from app.services.data_service import DataService
 from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
 from app.services.validation_service import DataValidationService
-from fastapi import UploadFile
-from fastapi.responses import JSONResponse
 
 # Настройка логгера
 logger = logging.getLogger("mortgage-api")

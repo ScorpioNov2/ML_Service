@@ -15,7 +15,7 @@ jobs:
         working-directory: ./server
 
     steps:
-    - name: Загрузка код репозитория
+    - name: Загрузка кода репозитория
       uses: actions/checkout@v4
 
     - name: Установка Python
@@ -27,8 +27,7 @@ jobs:
     - name: Установка зависимостей
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt          # основные зависимости
-        pip install -r ../requirements-dev.txt   # для линтеров и тестов
+        pip install -r requirements.txt
 
     - name: Линтинг с flake8
       run: flake8 .
@@ -47,23 +46,27 @@ jobs:
   frontend-lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Загрузка кода репозитория
-        uses: actions/checkout@v4
+    - name: Загрузка кода репозитория
+      uses: actions/checkout@v4
 
-      - name: Установка Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+    - name: Установка Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
 
-      - name: Установка локальных зависимостей
-        run: npm ci
+    - name: Установка зависимостей фронтенда
+      run: npm ci
+      working-directory: ./client
 
-      - name: Проверка валидности HTML
-        run: npx html-validate "client/*.html"
+    - name: Проверка HTML
+      run: npx html-validate "*.html"
+      working-directory: ./client
 
-      - name: Проверка стилей CSS
-        run: npx stylelint "client/*.css"
+    - name: Проверка CSS
+      run: npx stylelint "*.css"
+      working-directory: ./client
 
-      - name: Проверка JavaScript
-        run: npx eslint "client/*.js"
+    - name: Проверка JavaScript
+      run: npx eslint "*.js"
+      working-directory: ./client

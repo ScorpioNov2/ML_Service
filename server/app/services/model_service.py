@@ -7,8 +7,8 @@
 from __future__ import annotations
 
 import io
-import pickle
 import logging
+import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any

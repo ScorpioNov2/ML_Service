@@ -50,13 +50,19 @@ def _generate_sample_data() -> pd.DataFrame:
 
 def _build_pipeline(df: pd.DataFrame) -> Pipeline:
     """Построить sklearn Pipeline с предобработкой и классификатором."""
-    numeric_cols = [s.name for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT)]
+    numeric_cols = [
+        s.name for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT)
+    ]
     categorical_cols = [s.name for s in DATA_SCHEMA if s.dtype == ColumnDtype.OBJECT]
 
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", StandardScaler(), numeric_cols),
-            ("cat", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), categorical_cols),
+            (
+                "cat",
+                OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1),
+                categorical_cols,
+            ),
         ],
         remainder="drop",
     )
@@ -77,8 +83,12 @@ def main() -> None:
 
     # Синтетическая целевая переменная (одобрение кредита)
     # Используем комбинацию признаков для гарантии двух классов
-    score_norm = (df["credit_score"] - df["credit_score"].mean()) / df["credit_score"].std()
-    income_norm = (df["person_income"] - df["person_income"].mean()) / df["person_income"].std()
+    score_norm = (df["credit_score"] - df["credit_score"].mean()) / df[
+        "credit_score"
+    ].std()
+    income_norm = (df["person_income"] - df["person_income"].mean()) / df[
+        "person_income"
+    ].std()
     y = (score_norm + income_norm > 0).astype(int).values
 
     print("⏳ Обучение модели Pipeline (предобработка + LogisticRegression)...")
@@ -90,8 +100,12 @@ def main() -> None:
 
     print(f"✅  Модель сохранена: {OUTPUT_PATH}")
     print(f"   Признаков: {len(DATA_SCHEMA)}")
-    print(f"   Числовых:  {sum(1 for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT))}")
-    print(f"   Категориальных: {sum(1 for s in DATA_SCHEMA if s.dtype == ColumnDtype.OBJECT)}")
+    print(
+        f"   Числовых:  {sum(1 for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT))}"
+    )
+    print(
+        f"   Категориальных: {sum(1 for s in DATA_SCHEMA if s.dtype == ColumnDtype.OBJECT)}"
+    )
 
 
 if __name__ == "__main__":

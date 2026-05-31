@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import pandas as pd
+
 from app.config import MSG_DATA_PARSE_ERROR, SUPPORTED_DATA_EXTENSIONS
 from app.utils.file_validator import FileValidator
 

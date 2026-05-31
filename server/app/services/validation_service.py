@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import pandas as pd
+
 from app.config import (
     MSG_EMPTY_DATAFRAME,
     MSG_INVALID_CATEGORY,

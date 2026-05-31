@@ -3,14 +3,15 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 
+from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.responses import JSONResponse
+
 from app.controllers.prediction_controller import PredictionController
 from app.schemas.prediction_schema import AppStatusCode, PredictionResponse
 from app.services.data_service import DataService
 from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
 from app.services.validation_service import DataValidationService
-from fastapi import APIRouter, File, Form, UploadFile
-from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/predict", tags=["Предсказание"])
 
@@ -53,7 +54,10 @@ def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONRes
     response_model=PredictionResponse,
     responses={
         400: {"model": PredictionResponse, "description": "Некорректный запрос"},
-        404: {"model": PredictionResponse, "description": "Модель по умолчанию не найдена"},
+        404: {
+            "model": PredictionResponse,
+            "description": "Модель по умолчанию не найдена",
+        },
         422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
         500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
     },
@@ -82,7 +86,10 @@ async def predict_form(
     response_model=PredictionResponse,
     responses={
         400: {"model": PredictionResponse, "description": "Некорректный запрос"},
-        404: {"model": PredictionResponse, "description": "Модель по умолчанию не найдена"},
+        404: {
+            "model": PredictionResponse,
+            "description": "Модель по умолчанию не найдена",
+        },
         422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
         500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
     },
@@ -108,7 +115,10 @@ async def predict_csv(
     ),
     response_model=PredictionResponse,
     responses={
-        400: {"model": PredictionResponse, "description": "Некорректный запрос или формат файла"},
+        400: {
+            "model": PredictionResponse,
+            "description": "Некорректный запрос или формат файла",
+        },
         422: {"model": PredictionResponse, "description": "Ошибка валидации данных"},
         500: {"model": PredictionResponse, "description": "Внутренняя ошибка сервера"},
     },

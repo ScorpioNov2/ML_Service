@@ -15,7 +15,11 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from app.config import MSG_PREDICTION_ERROR, PREDICTED_COLUMN_NAME, PROBABILITY_COLUMN_NAME
+from app.config import (
+    MSG_PREDICTION_ERROR,
+    PREDICTED_COLUMN_NAME,
+    PROBABILITY_COLUMN_NAME,
+)
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -83,7 +87,13 @@ class LoanDataProcessor:
             "previous_loan_defaults_on_file",
         ]
 
-        self.education_order = {"High School": 0, "Associate": 1, "Bachelor": 2, "Master": 3, "Doctorate": 4}
+        self.education_order = {
+            "High School": 0,
+            "Associate": 1,
+            "Bachelor": 2,
+            "Master": 3,
+            "Doctorate": 4,
+        }
 
         self.home_ownership_map = {"RENT": 1, "MORTGAGE": 2, "OWN": 3, "OTHER": 4}
 

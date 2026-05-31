@@ -54,20 +54,35 @@ DATA_SCHEMA: tuple[ColumnSpec, ...] = (
     ),
     ColumnSpec("person_income", ColumnDtype.FLOAT),
     ColumnSpec("person_emp_exp", ColumnDtype.INT),
-    ColumnSpec("person_home_ownership", ColumnDtype.OBJECT, allowed_values=("RENT", "OWN", "MORTGAGE", "OTHER")),
+    ColumnSpec(
+        "person_home_ownership",
+        ColumnDtype.OBJECT,
+        allowed_values=("RENT", "OWN", "MORTGAGE", "OTHER"),
+    ),
     # ── Информация о кредите ────────────────────────────────────
     ColumnSpec("loan_amnt", ColumnDtype.FLOAT),
     ColumnSpec(
         "loan_intent",
         ColumnDtype.OBJECT,
-        allowed_values=("PERSONAL", "EDUCATION", "MEDICAL", "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION"),
+        allowed_values=(
+            "PERSONAL",
+            "EDUCATION",
+            "MEDICAL",
+            "VENTURE",
+            "HOMEIMPROVEMENT",
+            "DEBTCONSOLIDATION",
+        ),
     ),
     ColumnSpec("loan_int_rate", ColumnDtype.FLOAT),
     ColumnSpec("loan_percent_income", ColumnDtype.FLOAT),
     # ── Кредитная история ───────────────────────────────────────
     ColumnSpec("cb_person_cred_hist_length", ColumnDtype.FLOAT),
     ColumnSpec("credit_score", ColumnDtype.INT),
-    ColumnSpec("previous_loan_defaults_on_file", ColumnDtype.OBJECT, allowed_values=("No", "Yes")),
+    ColumnSpec(
+        "previous_loan_defaults_on_file",
+        ColumnDtype.OBJECT,
+        allowed_values=("No", "Yes"),
+    ),
 )
 
 # Быстрый поиск по имени колонки: { "person_age": ColumnSpec(...), ... }
