@@ -41,6 +41,8 @@ jobs:
 
     - name: Запуск тестов с pytest
       run: pytest tests/ -v --cov=app --cov-report=term
+      env:
+        PYTHONPATH: .
 
   frontend-lint:
     runs-on: ubuntu-latest
