@@ -1,0 +1,41 @@
+on:
+  push:
+    - workflows: [lab-check]
+      filter:
+        branches: ["main", "master"]
+  pull_request:
+    - workflows: [lab-check]
+
+workflows:
+  lab-check:
+    tasks:
+      - name: backend-lint-and-test
+        cubes:
+          - name: python-env
+            image: docker.io/library/python:3.11
+            script:
+              - cd server
+              - pip install -r requirements.txt
+              - pip install black flake8 isort pytest pytest-cov
+              - flake8 .
+              - black --check .
+              - isort --check-only .
+              - PYTHONPATH=. pytest tests/ -v --cov=app --cov-report=term
+            artifacts:
+              paths:
+                - server/.pytest_cache
+                - server/htmlcov
+
+      - name: frontend-lint
+        cubes:
+          - name: node-env
+            image: docker.io/library/node:20
+            script:
+              - cd client
+              - npm ci
+              - npx html-validate "*.html"
+              - npx stylelint "*.css"
+              - npx eslint "*.js"
+            artifacts:
+              paths:
+                - client/node_modules/.cache
