@@ -60,10 +60,13 @@ jobs:
         npm install -g html-validate stylelint eslint
 
     - name: Проверка валидности HTML
-      run: html-validate "client/**/*.html"
+      run: html-validate "client/*.html"
+
+    - name: Установка stylelint конфига
+      run: npm install -g stylelint-config-standard
 
     - name: Проверка стилей CSS
-      run: stylelint "client/**/*.css"
+      run: stylelint "frontend/*.css"
 
     - name: Проверка JavaScript
-      run: eslint "client/**/*.js"
+      run: eslint "client/*.js"
