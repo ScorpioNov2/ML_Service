@@ -1,3 +1,13 @@
+"""
+Контроллер для обработки запросов предсказания.
+
+Содержит 3 публичных метода для эндпоинтов /form, /csv, /custom.
+Каждый метод:
+    1. Загружает модель (по умолчанию или пользовательскую)
+    2. Парсит данные (CSV или JSON)
+    3. Выполняет валидацию, предсказание и возвращает JSON-ответ
+"""
+
 from __future__ import annotations
 
 import logging
@@ -27,7 +37,7 @@ logger = logging.getLogger("mortgage-api")
 class PredictionController:
     """
     Связывает HTTP-слой с бизнес-сервисами.
-    Три публичных обработчика — по одному на каждый эндпоинт.
+    3 публичных обработчика - по одному на каждый эндпоинт
     """
 
     def __init__(
@@ -37,6 +47,13 @@ class PredictionController:
         prediction_service: PredictionService,
         validation_service: DataValidationService,
     ) -> None:
+        """
+        Инициализирует контроллер необходимыми сервисами:
+            1. Сервис для загрузки моделей
+            2. Сервис для чтения и преобразования данных
+            3. Сервис для выполнения предсказаний
+            4. Сервис для валидации входных данных
+        """
         self._model_svc = model_service
         self._data_svc = data_service
         self._pred_svc = prediction_service
@@ -47,9 +64,11 @@ class PredictionController:
         form_data: list[dict[str, Any]],
     ) -> JSONResponse:
         """
-        /predict/form
-        Входные данные  : JSON-массив строк.
-        Модель          : Модель по умолчанию с сервера.
+        Обработчик эндпоинта /predict/form.
+
+        Args: list[dict[str, Any]] - Список словарей с данными клиентов (JSON-массив)
+
+        Returns: JSONResponse - Успешный ответ с предсказаниями или JSON-ошибка
         """
         logger.info(f"handle_form: received {len(form_data)} row(s)")
         model = self._load_default_model()
@@ -57,7 +76,6 @@ class PredictionController:
             logger.error("handle_form: failed to load default model")
             return model
 
-        # [2] Разобрать данные формы
         try:
             df = self._data_svc.read_form_data(form_data)
             logger.info(f"handle_form: parsed DataFrame with {len(df)} rows")
@@ -72,9 +90,11 @@ class PredictionController:
         data_file: UploadFile,
     ) -> JSONResponse:
         """
-        /predict/csv
-        Входные данные  : CSV-файл.
-        Модель          : Модель по умолчанию с сервера.
+        Обработчик эндпоинта /predict/csv.
+
+        Args: data_file : UploadFile - Загруженный CSV-файл
+
+        Returns: JSONResponse - Успешный ответ с предсказаниями или JSON-ошибка
         """
         logger.info(f"handle_csv: received file {data_file.filename}")
         model = self._load_default_model()
@@ -82,7 +102,6 @@ class PredictionController:
             logger.error("handle_csv: failed to load default model")
             return model
 
-        # [2] Разобрать CSV-файл
         data_result = await self._parse_csv(data_file)
         if isinstance(data_result, JSONResponse):
             logger.error("handle_csv: CSV parsing failed")
@@ -98,9 +117,14 @@ class PredictionController:
         form_data: Optional[list[dict[str, Any]]] = None,
     ) -> JSONResponse:
         """
-        /predict/custom
-        Входные данные  : CSV-файл ИЛИ JSON-форма (CSV имеет приоритет).
-        Модель          : Обязательный загружаемый .pkl-файл.
+        Обработчик эндпоинта /predict/custom.
+
+        Args:
+            model_file : UploadFile - Загруженный файл модели (.pkl)
+            data_file : Optional[UploadFile], default=None - CSV-файл с данными (приоритет над form_data)
+            form_data : Optional[list[dict[str, Any]]], default=None - JSON-массив с данными (используется, если data_file не передан)
+
+        Returns: JSONResponse - Успешный ответ с предсказаниями или JSON-ошибка
         """
         logger.info(
             f"handle_custom: model file={model_file.filename}, data_file={data_file.filename if data_file else None}, form_data present={form_data is not None}"
@@ -121,7 +145,7 @@ class PredictionController:
             logger.error(f"handle_custom: model load error - {exc}")
             return self._error(AppStatusCode.SERVER_ERROR, str(exc))
 
-        # [2] Данные: пользователь использует одновременно form and csv
+        # Определение источника данных
         if data_file is not None and form_data:
             logger.warning("handle_custom: both data_file and form_data provided, ambiguous")
             return self._error(
@@ -148,21 +172,25 @@ class PredictionController:
 
         return self._run_pipeline(model, df)
 
-    # Общий pipeline: валидация → предсказание → JSON-ответ
     def _run_pipeline(self, model: Any, df: pd.DataFrame) -> JSONResponse:
         """
-        [3] Валидация схемы данных
-        [4] Предсказание
-        [5] Формирование JSON-ответа
+        Общий пайплайн:
+            1. Валидация DataFrame согласно DATA_SCHEMA
+            2. Вызов модели для предсказания
+            3. Преобразование результата в JSONResponse
+
+        Args:
+            model : Any - Обученная модель (scikit-learn Pipeline или словарь)
+            df : pd.DataFrame - Исходные данные (немодифицированные)
+
+        Returns: JSONResponse - Успешный ответ с предсказаниями или JSON-ошибка
         """
-        # [3] Валидация
         validation = self._validation_svc.validate(df)
         if not validation.is_valid:
             logger.warning(f"Validation failed: {validation.summary()}")
             return self._error(AppStatusCode.UNPROCESSABLE, validation.summary())
         logger.info(f"Validation passed for {len(df)} rows")
 
-        # [4] Предсказание
         try:
             result_df = self._pred_svc.predict(model, df)
             logger.info(f"Prediction completed for {len(result_df)} rows")
@@ -182,9 +210,14 @@ class PredictionController:
             content=payload.model_dump(),
         )
 
-    # Приватные вспомогательные методы
     def _load_default_model(self) -> Any:
-        """Загрузить модель по умолчанию. Вернуть объект или JSONResponse с ошибкой."""
+        """
+        Загрузка модель по умолчанию.
+
+        Returns: Any - Модель (объект) или JSONResponse в случае ошибки
+
+        Raises: FileNotFoundError, ValueError - Логируются и преобразуются в JSONResponse внутри метода
+        """
         try:
             model = self._model_svc.load_default()
             logger.info("Default model loaded successfully")
@@ -197,7 +230,13 @@ class PredictionController:
             return self._error(AppStatusCode.SERVER_ERROR, str(exc))
 
     async def _parse_csv(self, data_file: UploadFile) -> pd.DataFrame | JSONResponse:
-        """Проверить расширение и разобрать CSV в DataFrame. Вернуть DataFrame или ошибку."""
+        """
+        Проверка расширение и разобрать CSV-файл в DataFrame.
+
+        Args: Data_file : UploadFile - Загруженный CSV-файл
+
+        Returns: pd.DataFrame | JSONResponse - DataFrame при успехе, JSONResponse с ошибкой при неудаче
+        """
         if not self._data_svc.is_supported_file(data_file.filename or ""):
             logger.error(f"Unsupported CSV file extension: {data_file.filename}")
             return self._error(
@@ -215,7 +254,15 @@ class PredictionController:
 
     @staticmethod
     def _error(status_code: int, message: str) -> JSONResponse:
-        """Сформировать JSONResponse с описанием ошибки."""
+        """
+        Формирование JSONResponse с описанием ошибки
+
+        Args:
+            status_code : int - HTTP-статус код (из AppStatusCode)
+            message : str - Текст ошибки
+
+        Returns: JSONResponse - Ответ с единым форматом ошибки
+        """
         payload = PredictionResponse(status_code=status_code, message=message, data=None)
         return JSONResponse(
             status_code=status_code,

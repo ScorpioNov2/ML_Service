@@ -1,5 +1,5 @@
 """
-Pydantic-схемы — единственный источник истины для всех форматов запросов и ответов.
+Pydantic-схемы для запросов и ответов.
 """
 
 from __future__ import annotations
@@ -11,10 +11,7 @@ from pydantic import BaseModel
 
 
 class AppStatusCode(IntEnum):
-    """
-    Коды статуса на уровне приложения.
-    Отделены от HTTP-кодов, чтобы HTTP-слой и бизнес-слой могли развиваться независимо.
-    """
+    """Коды статуса приложения (отделены от HTTP)."""
 
     SUCCESS = 200
     BAD_REQUEST = 400
@@ -24,7 +21,7 @@ class AppStatusCode(IntEnum):
 
 
 class PredictionResponse(BaseModel):
-    """Единый конверт ответа для всех эндпоинтов предсказания."""
+    """Единый формат ответа для всех эндпоинтов."""
 
     status_code: int
     message: str
@@ -32,7 +29,7 @@ class PredictionResponse(BaseModel):
 
     @classmethod
     def ok(cls, message: str, data: Any = None) -> "PredictionResponse":
-        """Успешный ответ."""
+        """Успешный ответ (200)."""
         return cls(status_code=AppStatusCode.SUCCESS, message=message, data=data)
 
     @classmethod

@@ -1,10 +1,11 @@
 """
-* DataReader      — абстрактный базовый класс (DIP / ISP)
-* CSVDataReader   — читает байты CSV → DataFrame
-* FormDataReader  — преобразует List[dict] → DataFrame
-* DataService     — фасад, скрывающий выбор читателя от вызывающего кода
+Сервис для чтения данных из различных источников.
 
-Добавление нового источника данных (Excel, Parquet и т.д.):
+Реализованы:
+    - чтение из CSV-файла (байты - DataFrame)
+    - чтение из JSON-формы (список словарей - DataFrame)
+
+Добавление нового источника данных (Excel и т.д.):
   1. Создать новый подкласс DataReader.
   2. Добавить соответствующий метод в DataService.
 """
@@ -25,24 +26,29 @@ from app.utils.file_validator import FileValidator
 logger = logging.getLogger(__name__)
 
 
-# ── Абстрактный читатель ──────────────────────────────────────────────────────
+# Абстрактный читатель
 
 
 class DataReader(ABC):
-    """Преобразует произвольный источник данных в pandas DataFrame."""
+    """Абстрактный базовый класс для всех читателей данных."""
 
     @abstractmethod
     def read(self, source: Any) -> pd.DataFrame:
-        """Конвертировать source в DataFrame."""
+        """Преобразование источника данных в pandas DataFrame."""
 
 
-# ── Конкретные читатели ───────────────────────────────────────────────────────
+# Конкретные читатели
 
 
 class CSVDataReader(DataReader):
-    """Читает сырые байты CSV в DataFrame."""
+    """Чтение CSV из байтов."""
 
     def read(self, source: bytes) -> pd.DataFrame:
+        """
+        Преобразование байтов CSV в DataFrame.
+
+        Raises: ValueError - Если чтение не удалось
+        """
         try:
             df = pd.read_csv(io.BytesIO(source))
             logger.info(f"Successfully read CSV: {len(df)} rows, {len(df.columns)} columns")
@@ -56,6 +62,11 @@ class FormDataReader(DataReader):
     """Преобразует список словарей (поля формы) в DataFrame."""
 
     def read(self, source: list[dict[str, Any]]) -> pd.DataFrame:
+        """
+        Преобразование списка словарей в DataFrame.
+
+        Raises: ValueError - Если преобразование не удалось
+        """
         try:
             df = pd.DataFrame(source)
             logger.info(f"Successfully converted form data: {len(df)} rows, {len(df.columns)} columns")
@@ -65,12 +76,14 @@ class FormDataReader(DataReader):
             raise ValueError(MSG_DATA_PARSE_ERROR.format(detail=str(exc))) from exc
 
 
-# ── Сервис ────────────────────────────────────────────────────────────────────
+# Сервис
 
 
 class DataService:
     """
-    Фасад: выбирает правильный DataReader и предоставляет единый API.
+    Фасад для работы с данными: выбор подходящего читателя и единый API.
+
+    Используется в контроллерах для загрузки данных из разных источников.
     """
 
     def __init__(self) -> None:
@@ -79,32 +92,32 @@ class DataService:
         self._csv_validator = FileValidator(SUPPORTED_DATA_EXTENSIONS)
         logger.info("DataService initialized")
 
-    # ── Публичный интерфейс ───────────────────────────────────────────────────
+    # Публичный интерфейс
 
     def is_supported_file(self, filename: str) -> bool:
-        """Проверить, поддерживается ли расширение файла данных."""
+        """Проверка, поддерживается ли расширение файла данных."""
         supported = self._csv_validator.is_supported(filename)
         if not supported:
             logger.warning(f"Unsupported data file: {filename}")
         return supported
 
     def show_supported_extensions(self) -> str:
-        """Вернуть строку допустимых расширений для вывода пользователю."""
+        """Возврат строки допустимых расширений для вывода пользователю."""
         return self._csv_validator.show_supported_extensions()
 
     def read_csv_bytes(self, csv_bytes: bytes) -> pd.DataFrame:
-        """Разобрать загруженные байты CSV."""
+        """Чтение CSV из байтов."""
         logger.debug("Reading CSV from bytes")
         return self._csv_reader.read(csv_bytes)
 
     def read_form_data(self, rows: list[dict[str, Any]]) -> pd.DataFrame:
-        """Построить DataFrame из JSON-строк формы."""
+        """Преобразование данные формы (список словарей) в DataFrame."""
         logger.debug(f"Converting form data with {len(rows)} rows")
         return self._form_reader.read(rows)
 
     @staticmethod
     def dataframe_to_records(df: pd.DataFrame) -> list[dict[str, Any]]:
-        """Сериализовать DataFrame в список словарей для JSON-ответа."""
+        """Преобразование DataFrame в список словарей для JSON-ответа."""
         records = df.to_dict(orient="records")
         logger.debug(f"Converted DataFrame to {len(records)} records")
         return records

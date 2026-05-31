@@ -1,7 +1,13 @@
 """
-* ModelLoader       — абстрактный базовый класс (ISP / DIP)
-* PickleModelLoader — конкретная реализация для файлов .pkl
-* ModelService      — оркестрирует выбор загрузчика и путь к файлу
+Сервис для загрузки моделей машинного обучения.
+
+Реализованы:
+    - загрузка из pickle-файла (.pkl)
+    - загрузка модели по умолчанию из папки ./models
+
+Добавление нового формата (например, joblib):
+    1. Создать новый подкласс ModelLoader.
+    2. Добавить запись в _loader_registry.
 """
 
 from __future__ import annotations
@@ -23,43 +29,46 @@ from app.config import (
 )
 from app.utils.file_validator import FileValidator
 
-# ── Инициализация логгера ─────────────────────────────────────────────────────
+# Настройка логгера
 logger = logging.getLogger("mortgage-api")
 
-# ── Абстрактный загрузчик ─────────────────────────────────────────────────────
+# Абстрактный загрузчик
 
 
 class ModelLoader(ABC):
-    """Загружает модель машинного обучения из бинарного потока."""
+    """Абстрактный базовый класс для всех загрузчиков моделей."""
 
     @abstractmethod
     def load(self, stream: io.IOBase) -> Any:
-        """Десериализовать и вернуть объект модели."""
+        """Десериализация модели из бинарного потока."""
 
 
-# ── Конкретные загрузчики ─────────────────────────────────────────────────────
+# Конкретные загрузчики
 
 
 class PickleModelLoader(ModelLoader):
-    """Десериализует модель из pickle-формата (.pkl)."""
+    """Загрузчик моделей из pickle-файлов (.pkl)."""
 
     def load(self, stream: io.IOBase) -> Any:
-        # nosec — вызывающий код контролирует источник данных
+        """
+        Загрузка модели из потока pickle.
+
+        Raises: может вызывать исключения pickle при повреждённом файле.
+        """
+        # nosec - вызывающий код контролирует источник данных
         return pickle.load(stream)
 
 
-# ── Сервис ────────────────────────────────────────────────────────────────────
+# Сервис
 
 
 class ModelService:
     """
-    Отвечает за:
-      — выбор правильного загрузчика по расширению файла;
-      — загрузку модели из загруженных байт или из пути по умолчанию.
+    Фасад для загрузки моделей: выбор загрузчика по расширению, загрузка из байтов или из файла по умолчанию.
     """
 
-    # Реестр расширений → классы загрузчиков.
-    # Чтобы добавить новый формат — добавить одну строку здесь.
+    # Реестр расширений -> классы загрузчиков
+    # Чтобы добавить новый формат - добавить одну строку здесь
     _loader_registry: dict[str, type[ModelLoader]] = {
         ".pkl": PickleModelLoader,
     }
@@ -67,22 +76,22 @@ class ModelService:
     def __init__(self) -> None:
         self._validator = FileValidator(SUPPORTED_MODEL_EXTENSIONS)
 
-    # ── Публичный интерфейс ───────────────────────────────────────────────────
+    # Публичный интерфейс
 
     def is_supported(self, filename: str) -> bool:
-        """Проверить, поддерживается ли расширение файла."""
+        """Проверка, поддерживается ли расширение файла модели."""
         supported = self._validator.is_supported(filename)
         logger.debug(f"Checking support for '{filename}': {supported}")
         return supported
 
     def show_supported_extensions(self) -> str:
-        """Вернуть строку допустимых расширений для вывода пользователю."""
+        """Возврат строки допустимых расширений для вывода пользователю."""
         extensions = self._validator.show_supported_extensions()
         logger.debug(f"Supported extensions: {extensions}")
         return extensions
 
     def load_from_bytes(self, filename: str, model_bytes: bytes) -> Any:
-        """Загрузить модель из сырых байт (загруженный файл)."""
+        """Загрузка модели из сырых байт (загруженный файл)."""
         logger.info(f"Loading model from bytes: {filename}")
         loader = self._resolve_loader(filename)
         try:
@@ -94,7 +103,7 @@ class ModelService:
             raise ValueError(MSG_MODEL_LOAD_ERROR.format(detail=str(exc))) from exc
 
     def load_default(self) -> Any:
-        """Загрузить модель по умолчанию из директории ./models."""
+        """Загрузка модели по умолчанию из директории ./models."""
         default_path: Path = DEFAULT_MODEL_DIR / DEFAULT_MODEL_FILENAME
         logger.info(f"Loading default model from {default_path}")
         if not default_path.exists():
@@ -110,10 +119,10 @@ class ModelService:
             logger.error(f"Failed to load default model from {default_path}: {exc}")
             raise ValueError(MSG_MODEL_LOAD_ERROR.format(detail=str(exc))) from exc
 
-    # ── Приватные вспомогательные методы ─────────────────────────────────────
+    # Приватные вспомогательные методы
 
     def _resolve_loader(self, filename: str) -> ModelLoader:
-        """Вернуть экземпляр загрузчика для данного расширения файла."""
+        """Возврат экземпляра загрузчика для данного расширения файла."""
         ext = Path(filename).suffix.lower()
         logger.debug(f"Resolving loader for extension '{ext}' from file '{filename}'")
         loader_class = self._loader_registry.get(ext)

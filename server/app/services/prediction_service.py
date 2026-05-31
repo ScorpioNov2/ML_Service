@@ -1,8 +1,7 @@
 """
-PredictionService — единственная ответственность: выполнение предсказания.
+Сервис для выполнения предсказаний модели.
 
-Ничего не знает о HTTP, форматах файлов или сериализации моделей.
-Просто вызывает model.predict() и добавляет результаты как новую колонку.
+Вызывает model.predict() и добавляет результаты как новые колонки.
 """
 
 from __future__ import annotations
@@ -15,24 +14,21 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from app.config import (
-    MSG_PREDICTION_ERROR,
-    PREDICTED_COLUMN_NAME,
-    PROBABILITY_COLUMN_NAME,
-)
+from app.config import MSG_PREDICTION_ERROR, PREDICTED_COLUMN_NAME, PROBABILITY_COLUMN_NAME
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
 
 
 class PredictionService:
-    """Запускает инференс и возвращает обогащённый DataFrame."""
+    """Запуск инференса и возврат обогащённого DataFrame."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._loan_data_processor = LoanDataProcessor()
         logger.info("PredictionService initialized")
 
     def predict(self, model: Dict | Any, df: pd.DataFrame) -> pd.DataFrame:
+        """Выполнение предсказания и добавление колонки predicted и confidence (%)."""
         start_time = time.time()
         logger.info(f"Starting prediction on {len(df)} rows")
 
@@ -69,11 +65,14 @@ class PredictionService:
         return result
 
     def _preprocess_raw_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Обработка сырых данных (внутренний метод)."""
         return self._loan_data_processor.process_raw_data(df)
 
 
 class LoanDataProcessor:
-    def __init__(self):
+    """Обработчик данных: очистка, кодирование, отбор признаков, масштабирование."""
+
+    def __init__(self) -> None:
         self.selected_features = [
             "person_age",
             "person_income",
@@ -115,6 +114,7 @@ class LoanDataProcessor:
         logger.info("LoanDataProcessor initialized")
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Удаление выбросов и некорректных записей."""
         initial_rows = len(df)
         df = df.copy()
 
@@ -130,6 +130,7 @@ class LoanDataProcessor:
         return df.reset_index(drop=True)
 
     def encode_categorical_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Преобразование категориальных признаков в числовые."""
         df = df.copy()
         logger.debug("Encoding categorical features")
 
@@ -152,7 +153,8 @@ class LoanDataProcessor:
         return df
 
     def select_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        missing_columns = [column for column in self.selected_features if column not in df.columns]
+        """Только финальный набор признаков."""
+        missing_columns = [col for col in self.selected_features if col not in df.columns]
 
         if missing_columns:
             logger.error(f"Missing required columns: {missing_columns}")
@@ -163,7 +165,11 @@ class LoanDataProcessor:
 
     def process_raw_data(self, data):
         """
-        raw data -> clean -> encode -> select features -> scale -> processed data
+        Полный пайплайн предобработки:
+        1. Очистка
+        2. Кодирование
+        3. Отбор признаков
+        4. Масштабирование
         """
         logger.debug("Starting raw data processing")
 

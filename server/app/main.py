@@ -1,3 +1,10 @@
+"""
+Модуль создания приложения FastAPI.
+
+Настраивает CORS, включает роутеры, добавляет эндпоинт /health.
+Инициализирует логирование.
+"""
+
 import logging
 
 from fastapi import FastAPI
@@ -23,7 +30,7 @@ logger = logging.getLogger("mortgage-api")
 
 
 def create_app() -> FastAPI:
-    """Фабрика приложения — упрощает тестирование без побочных эффектов."""
+    """Создаёт и настраивает экземпляр FastAPI."""
 
     application = FastAPI(
         title=API_TITLE,
@@ -34,7 +41,7 @@ def create_app() -> FastAPI:
 
     logger.info("Starting Mortgage Prediction API")
 
-    # ── CORS ──────────────────────────────────────────────────────────────────
+    # CORS
     application.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ALLOW_ORIGINS,
@@ -44,14 +51,14 @@ def create_app() -> FastAPI:
     )
     logger.debug("CORS middleware configured")
 
-    # ── Роутеры ───────────────────────────────────────────────────────────────
+    # Роутеры
     application.include_router(prediction_router, prefix=API_PREFIX)
     logger.debug(f"Router included with prefix {API_PREFIX}")
 
-    # ── Проверка работоспособности (только инфраструктура, без бизнес-логики) ─
+    # Эндпоинт для проверки работоспособности
     @application.get("/health", tags=["Система"])
     async def health() -> dict[str, str]:
-        """Проверить, что сервер запущен и готов к работе."""
+        """Проверяет, что сервер запущен и готов к работе."""
         return {"status": "ok", "version": API_VERSION}
 
     logger.info("Application setup complete")
@@ -59,4 +66,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-# uvicorn app.main:app --reload

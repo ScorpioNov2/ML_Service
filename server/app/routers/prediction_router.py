@@ -1,7 +1,16 @@
+"""
+Маршруты для предсказаний.
+
+Содержит 3 эндпоинта:
+    1. POST /form   - ручной ввод (JSON-массив), модель по умолчанию
+    2. POST /csv    - загрузка CSV, модель по умолчанию
+    3. POST /custom - загрузка своей модели (.pkl) + данные (CSV или JSON)
+"""
+
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -13,9 +22,10 @@ from app.services.model_service import ModelService
 from app.services.prediction_service import PredictionService
 from app.services.validation_service import DataValidationService
 
+# Инициализация роутера
 router = APIRouter(prefix="/predict", tags=["Предсказание"])
 
-# ── Ручное внедрение зависимостей ─────────────────────────────────────────────
+# Ручное внедрение зависимостей
 _controller = PredictionController(
     model_service=ModelService(),
     data_service=DataService(),
@@ -26,8 +36,12 @@ _controller = PredictionController(
 
 def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONResponse]:
     """
-    Декодировать строку form_data из JSON в список Python.
-    Возвращает (данные, None) при успехе или (None, JSONResponse) при ошибке.
+    Декодирование строку form_data из JSON в список Python.
+    Args: raw : str - Строка JSON, представляющая массив объектов.
+
+    Returns: tuple[list[dict], None] | tuple[None, JSONResponse]
+                - В случае успеха: (данные, None)
+                - В случае ошибки: (None, JSONResponse с описанием ошибки)
     """
     try:
         parsed = json.loads(raw)
@@ -42,7 +56,6 @@ def _decode_form_data(raw: str) -> tuple[list[dict], None] | tuple[None, JSONRes
         )
 
 
-#   POST /predict/form    — данные из JSON-формы,  модель по умолчанию (без загрузки)
 @router.post(
     "/form",
     summary="Предсказание по полям формы (модель по умолчанию)",
@@ -67,14 +80,20 @@ async def predict_form(
         ...,
         description=("JSON-массив объектов-строк. Пример: " '[{"person_age": 35.0, "person_gender": "male", ...}]'),
     ),
-) -> Any:
+) -> JSONResponse:
+    """
+    Обработчик POST /predict/form.
+
+    Args: form_data : str - JSON-массив с данными клиентов
+
+    Returns: JSONResponse - Ответ с предсказаниями или ошибкой
+    """
     parsed, err = _decode_form_data(form_data)
     if err:
         return err
     return await _controller.handle_form(form_data=parsed)
 
 
-#     /predict/csv     — данные из CSV-файла,   модель по умолчанию (без загрузки)
 @router.post(
     "/csv",
     summary="Предсказание по CSV-файлу (модель по умолчанию)",
@@ -99,11 +118,17 @@ async def predict_csv(
         ...,
         description="CSV-файл с колонками согласно схеме данных (DATA_SCHEMA).",
     ),
-) -> Any:
+) -> JSONResponse:
+    """
+    Обработчик POST /predict/csv.
+
+    Args: data_file : UploadFile - Загруженный CSV-файл
+
+    Returns: JSONResponse - Ответ с предсказаниями или ошибкой
+    """
     return await _controller.handle_csv(data_file=data_file)
 
 
-#   /predict/custom  — данные из формы ИЛИ CSV, обязательная загрузка .pkl-модели
 @router.post(
     "/custom",
     summary="Предсказание с пользовательской моделью",
@@ -136,7 +161,17 @@ async def predict_custom(
         None,
         description=("JSON-массив объектов-строк. Пример: " '[{"person_age": 35.0, "person_gender": "male", ...}]'),
     ),
-) -> Any:
+) -> JSONResponse:
+    """
+    Обработчик POST /predict/custom.
+
+    Args:
+        model_file : UploadFile - Загруженный файл модели (.pkl)
+        data_file : Optional[UploadFile] - Опциональный CSV-файл с данными (имеет приоритет над form_data)
+        form_data : Optional[str] - Опциональный JSON-массив с данными
+
+    Returns:JSONResponse - Ответ с предсказаниями или ошибкой
+    """
     parsed_form: Optional[list[dict]] = None
     if form_data:
         parsed_form, err = _decode_form_data(form_data)
