@@ -101,7 +101,9 @@ class PredictionController:
         Входные данные  : CSV-файл ИЛИ JSON-форма (CSV имеет приоритет).
         Модель          : Обязательный загружаемый .pkl-файл.
         """
-        logger.info(f"handle_custom: model file={model_file.filename}, data_file={data_file.filename if data_file else None}, form_data present={form_data is not None}")
+        logger.info(
+            f"handle_custom: model file={model_file.filename}, data_file={data_file.filename if data_file else None}, form_data present={form_data is not None}"
+        )
 
         # [1] Загрузить пользовательскую модель (обязательно)
         if not self._model_svc.is_supported(model_file.filename or ""):

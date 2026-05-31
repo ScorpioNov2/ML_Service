@@ -24,10 +24,10 @@ from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler
 
 from app.schemas.data_schema import DATA_SCHEMA, ColumnDtype
 
-MODELS_DIR    = Path("./models")
-OUTPUT_PATH   = MODELS_DIR / "model.pkl"
-RANDOM_STATE  = 42
-N_SAMPLES     = 500
+MODELS_DIR = Path("./models")
+OUTPUT_PATH = MODELS_DIR / "model.pkl"
+RANDOM_STATE = 42
+N_SAMPLES = 500
 
 
 def _generate_sample_data() -> pd.DataFrame:
@@ -50,21 +50,23 @@ def _generate_sample_data() -> pd.DataFrame:
 
 def _build_pipeline(df: pd.DataFrame) -> Pipeline:
     """Построить sklearn Pipeline с предобработкой и классификатором."""
-    numeric_cols     = [s.name for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT)]
+    numeric_cols = [s.name for s in DATA_SCHEMA if s.dtype in (ColumnDtype.FLOAT, ColumnDtype.INT)]
     categorical_cols = [s.name for s in DATA_SCHEMA if s.dtype == ColumnDtype.OBJECT]
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", StandardScaler(),   numeric_cols),
+            ("num", StandardScaler(), numeric_cols),
             ("cat", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), categorical_cols),
         ],
         remainder="drop",
     )
 
-    return Pipeline([
-        ("preprocessor", preprocessor),
-        ("classifier",   LogisticRegression(random_state=RANDOM_STATE, max_iter=200)),
-    ])
+    return Pipeline(
+        [
+            ("preprocessor", preprocessor),
+            ("classifier", LogisticRegression(random_state=RANDOM_STATE, max_iter=200)),
+        ]
+    )
 
 
 def main() -> None:
