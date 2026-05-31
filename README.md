@@ -5,7 +5,7 @@
 
 ---
 
-## 📁 Структура проекта
+## Структура проекта
 
 ```
 ML_Service/
@@ -78,9 +78,9 @@ docker-compose -f docker/docker-compose.yml up --build
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
-Сервис предоставляет **три** эндпоинта (в соответствии с заданием, но с более удобными URL):
+Сервис предоставляет **три** эндпоинта:
 
 | Метод | URL | Описание |
 |-------|-----|-----------|
@@ -88,7 +88,7 @@ docker-compose -f docker/docker-compose.yml up --build
 | `POST` | `/api/v1/predict/csv` | Загрузка CSV-файла, модель по умолчанию |
 | `POST` | `/api/v1/predict/custom` | Своя модель (`.pkl`) + данные (CSV или JSON-форма) |
 
-> **Примечание:** Эндпоинты `/upload-model`, `/predict`, `/predict-from-csv` в задании – в реализации они объединены логикой `/custom` и `/form`/`/csv`. Это сделано для удобства и соответствует функциональным требованиям.
+> **Примечание:** Эндпоинты `/upload-model`, `/predict`, `/predict-from-csv` в задании - в реализации они объединены логикой `/custom` и `/form`/`/csv`. Это сделано для удобства.
 
 ### Формат ответа (JSON)
 ```json
@@ -146,7 +146,7 @@ npx eslint "*.js"
 
 ---
 
-## CI/CD (GitHub Actions / SourceCraft)
+## CI/CD (GitHub Actions/SourceCraft)
 
 - **GitHub Actions** (`.github/workflows/ci.yml`) - запускает все проверки при пуше в `main`/`master`.
 - **SourceCraft** (`.sourcecraft/ci.yaml`) - аналогичный CI для внутренней платформы.
@@ -173,7 +173,7 @@ docker-compose up --build
 
 ---
 
-## 📝 Логирование
+## Логирование
 
 В сервисах `prediction_service.py` и `validation_service.py` добавлено логирование:
 - Время выполнения предсказаний
@@ -181,11 +181,11 @@ docker-compose up --build
 - Предупреждения о некорректных значениях
 - Информация о загрузке модели
 
-Логи выводятся в `stdout` – видны в консоли, Docker и CI.
+Логи выводятся в `stdout` - видны в консоли, Docker и CI.
 
 ---
 
-## 📊 ML-модель
+## ML-модель
 
 - **Синтетический датасет** (13 признаков) генерируется `generate_sample_model.py`.
 - **Модель по умолчанию**: `LogisticRegression` в составе `Pipeline` (StandardScaler + OrdinalEncoder).
@@ -196,9 +196,9 @@ docker-compose up --build
 
 Полный процесс обучения и сравнения моделей (логистическая регрессия, случайный лес, градиентный бустинг) с выбором лучшей по ROC-AUC описан в отдельном ноутбуке:
 
-[**👉 Открыть ноутбук в Google Colab**](https://colab.research.google.com/drive/1jaRXFYCuOpefex9IwzVvReSFc_3_ZHpc?usp=sharing)
+[**Google Colab**](https://colab.research.google.com/drive/1jaRXFYCuOpefex9IwzVvReSFc_3_ZHpc?usp=sharing)
 
-В ноутбуке реализованы все этапы из требований лабораторной работы:  
+В ноутбуке реализованы:  
 - Очистка и предобработка данных  
 - Кодирование категориальных признаков  
 - Масштабирование  
