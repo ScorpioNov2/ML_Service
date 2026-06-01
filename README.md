@@ -36,8 +36,12 @@ ML_Service/
 │   └── pyproject.toml          # Настройки black/isort/pytest
 ├── model-training/             # Скрипты генерации модели
 │   ├── models/
-│   │   └── model.pkl
-│   └── generate_sample_model.py
+|   |   ├── best_loan_model.pkl
+|   |   ├── lr_loan_model.pkl
+│   │   └── rf_loan_model.pkl
+│   ├── testing_data/
+|   |   └── test.csv
+│   └── loan_approval_ml.ipynb
 ├── docker/                     # Docker-конфигурация
 │   ├── Dockerfile.backend
 │   ├── Dockerfile.frontend
