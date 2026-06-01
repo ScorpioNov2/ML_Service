@@ -187,8 +187,7 @@ docker-compose up --build
 
 ## ML-модель
 
-- **Синтетический датасет** (13 признаков) генерируется `generate_sample_model.py`.
-- **Модель по умолчанию**: `LogisticRegression` в составе `Pipeline` (StandardScaler + OrdinalEncoder).
+- **Модель по умолчанию**: `GradientBoosting` в составе `Pipeline` (StandardScaler + OrdinalEncoder).
 - Предобработка: очистка выбросов, кодирование категориальных признаков, отбор признаков.
 - При желании вы можете обучить свою модель (например, RandomForest) и загрузить её через `/predict/custom`.
 

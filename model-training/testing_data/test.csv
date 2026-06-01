@@ -1,0 +1,20 @@
+person_age,person_gender,person_education,person_income,person_emp_exp,person_home_ownership,loan_amnt,loan_intent,loan_int_rate,loan_percent_income,cb_person_cred_hist_length,credit_score,previous_loan_defaults_on_file,loan_status
+22.0,female,Master,71948.0,0,RENT,35000.0,PERSONAL,16.02,0.49,3.0,561,No,1
+21.0,female,High School,12282.0,0,OWN,1000.0,EDUCATION,11.14,0.08,2.0,504,Yes,0
+25.0,female,High School,12438.0,3,MORTGAGE,5500.0,MEDICAL,12.87,0.44,3.0,635,No,1
+23.0,female,Bachelor,79753.0,0,RENT,35000.0,MEDICAL,15.23,0.44,2.0,675,No,1
+24.0,male,Master,66135.0,1,RENT,35000.0,MEDICAL,14.27,0.53,4.0,586,No,1
+21.0,female,High School,12951.0,0,OWN,2500.0,VENTURE,7.14,0.19,2.0,532,No,1
+26.0,female,Bachelor,93471.0,1,RENT,35000.0,EDUCATION,12.42,0.37,3.0,701,No,1
+24.0,female,High School,95550.0,5,RENT,35000.0,MEDICAL,11.11,0.37,4.0,585,No,1
+24.0,female,Associate,100684.0,3,RENT,35000.0,PERSONAL,8.9,0.35,2.0,544,No,1
+21.0,female,High School,12739.0,0,OWN,1600.0,VENTURE,14.74,0.13,3.0,640,No,1
+22.0,female,High School,102985.0,0,RENT,35000.0,VENTURE,10.37,0.34,4.0,621,No,1
+21.0,female,Associate,13113.0,0,OWN,4500.0,HOMEIMPROVEMENT,8.63,0.34,2.0,651,No,1
+23.0,male,Bachelor,114860.0,3,RENT,35000.0,VENTURE,7.9,0.3,2.0,573,No,1
+26.0,male,Master,130713.0,0,RENT,35000.0,EDUCATION,18.39,0.27,4.0,708,No,1
+23.0,female,Associate,138998.0,0,RENT,35000.0,EDUCATION,7.9,0.25,4.0,583,No,0
+23.0,female,Master,600891.0,5,MORTGAGE,30000.0,DEBTCONSOLIDATION,10.65,0.05,3.0,670,Yes,0
+23.0,male,Bachelor,144943.0,0,RENT,35000.0,EDUCATION,7.9,0.24,4.0,663,No,0
+23.0,female,High School,111369.0,0,RENT,35000.0,MEDICAL,20.0,0.31,4.0,694,No,1
+23.0,male,Bachelor,136628.0,0,RENT,35000.0,DEBTCONSOLIDATION,18.25,0.26,4.0,709,No,1
