@@ -39,7 +39,8 @@ jobs:
       run: isort --check-only .
 
     - name: Запуск тестов с pytest
-      run: pytest tests/ -v --cov=app --cov-report=term
+      # run: pytest tests/ -v --cov=app --cov-report=term
+      run: python -m pytest tests/ -v --cov=app --cov-report=term --cache-clear
       env:
         PYTHONPATH: .
 
