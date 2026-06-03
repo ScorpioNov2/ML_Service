@@ -25,6 +25,7 @@ CORS_ALLOW_ORIGINS: list[str] = [
     "http://localhost:8080",  # Html
     "http://localhost:5173",
     "https://ml-service-six.vercel.app",
+    "https://ml-predict-app.vercel.app"
 ]
 CORS_ALLOW_METHODS: list[str] = ["*"]
 CORS_ALLOW_HEADERS: list[str] = ["*"]
